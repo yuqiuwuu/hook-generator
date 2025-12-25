@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hook Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* Root variables */
+    :root {
+      --bg-light: #f7f7f7;
+      --bg-dark: #1e1e2f;
+      --card-light: #ffffff;
+      --card-dark: #2c2c3f;
+      --text-light: #1e1e2f;
+      --text-dark: #f7f7f7;
+      --accent: #ff6ec7;
+      --accent-hover: #ff3dbd;
+    }
+
+    /* Global styles */
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg-light);
+      color: var(--text-light);
+      transition: all 0.3s ease;
+    }
+
+    .dark-mode {
+      background: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(90deg, #ff6ec7, #ff3dbd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 30px;
+    }
+
+    .toggle-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--accent);
+      border: none;
+      padding: 10px 20px;
+      color: white;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-weight: 600;
+    }
+
+    .toggle-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .card {
+      background: var(--card-light);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+
+    .dark-mode .card {
+      background: var(--card-dark);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    .dark-mode input, .dark-mode select {
+      background: #3a3a50;
+      border: 1px solid #555;
+      color: white;
+    }
+
+    button.generate-btn {
+      margin-top: 15px;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 25px;
+      background: var(--accent);
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    button.generate-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .result {
+      margin-top: 30px;
+      font-size: 1.1rem;
+      text-align: left;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .hook-item {
+      background: rgba(255,110,199,0.1);
+      padding: 10px 15px;
+      border-radius: 15px;
+      margin-bottom: 10px;
+    }
+
+    .dark-mode .hook-item {
+      background: rgba(255,110,199,0.2);
+    }
+  </style>
+</head>
+<body>
+  <button class="toggle-btn">🌙 Dark Mode</button>
+
+  <div class="container">
+    <h1>Hook Generator</h1>
+    <div class="card">
+      <input type="text" id="topic" placeholder="Enter your video topic">
+      <select id="platform">
+        <option value="">Select Platform</option>
+        <option value="TikTok">TikTok</option>
+        <option value="Instagram">Instagram</option>
+        <option value="YouTube Shorts">YouTube Shorts</option>
+      </select>
+      <select id="tone">
+        <option value="">Select Tone</option>
+        <option value="Funny">Funny</option>
+        <option value="Dramatic">Dramatic</option>
+        <option value="Informative">Informative</option>
+        <option value="Motivational">Motivational</option>
+      </select>
+      <button class="generate-btn">Generate Hooks</button>
+
+      <div class="result" id="result">
+        <!-- Hooks will appear here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const toggleBtn = document.querySelector('.toggle-btn');
+    toggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      toggleBtn.textContent = document.body.classList.contains('dark-mode') ? '☀️ Light Mode' : '🌙 Dark Mode';
+    });
+
+    const generateBtn = document.querySelector('.generate-btn');
+    const resultDiv = document.getElementById('result');
+
+    generateBtn.addEventListener('click', () => {
+      const topic = document.getElementById('topic').value;
+      const platform = document.getElementById('platform').value;
+      const tone = document.getElementById('tone').value;
+
+      if (!topic || !platform || !tone) {
+        alert("Please fill all fields!");
+        return;
+      }
+
+      // Placeholder hooks (replace this with API call later)
+      const hooks = [
+        `🔥 ${topic} that will blow up on ${platform}!`,
+        `Stop scrolling! You need to see this ${tone} ${topic}`,
+        `The secret to ${topic} on ${platform} revealed!`,
+        `Everyone is talking about ${topic} — are you in?`,
+        `${tone} hacks for ${topic} that actually work!`
+      ];
+
+      resultDiv.innerHTML = '';
+      hooks.forEach(hook => {
+        const div = document.createElement('div');
+        div.classList.add('hook-item');
+        div.textContent = hook;
+        resultDiv.appendChild(div);
+      });
+
+      resultDiv.style.display = 'block';
+    });
+  </script>
+</body>
+</html>
