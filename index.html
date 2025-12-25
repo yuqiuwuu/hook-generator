@@ -2,126 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hook Generator</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root {
-      --bg-light: #f7f7f7; --bg-dark: #1e1e2f;
-      --card-light: #ffffff; --card-dark: #2c2c3f;
-      --text-light: #1e1e2f; --text-dark: #f7f7f7;
-      --accent: #ff6ec7;
-    }
-
-    body { font-family: 'Poppins', sans-serif; margin: 0; background: var(--bg-light); color: var(--text-light); transition: 0.3s; }
-    .dark-mode { background: var(--bg-dark); color: var(--text-dark); }
-
-    /* Top Navigation Bar */
-    .top-nav {
-      position: fixed;
-      top: 0;
-      right: 0;
-      padding: 20px;
-      display: flex;
-      gap: 15px;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .token-badge {
-      background: var(--accent);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      box-shadow: 0 4px 10px rgba(255, 110, 199, 0.3);
-    }
-
-    .toggle-btn {
-      background: var(--card-light);
-      border: 1px solid #ddd;
-      padding: 8px 16px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: 0.2s;
-    }
-    .dark-mode .toggle-btn { background: var(--card-dark); border-color: #444; color: white; }
-
-    /* Main UI */
-    .container { max-width: 500px; margin: 100px auto 50px; padding: 20px; text-align: center; }
-    .card { background: var(--card-light); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-    .dark-mode .card { background: var(--card-dark); }
-
-    input, select { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ccc; box-sizing: border-box; }
-    .dark-mode input, .dark-mode select { background: #3a3a50; border: 1px solid #555; color: white; }
-
-    .generate-btn { width: 100%; padding: 15px; border: none; border-radius: 25px; background: var(--accent); color: white; font-weight: 600; cursor: pointer; margin-top: 10px; }
-    .generate-btn:disabled { background: #666; cursor: not-allowed; opacity: 0.7; }
-
-    .result { margin-top: 25px; text-align: left; display: none; }
-    .hook-item { background: rgba(255,110,199,0.1); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid var(--accent); }
+    /* ... (Keep your existing CSS here) ... */
+    #auth-section { margin-bottom: 20px; padding: 20px; border-bottom: 1px solid #ccc; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
 
   <div class="top-nav">
-    <div class="token-badge">⚡ <span id="tokenCount">5</span> Tokens</div>
+    <div class="token-badge">⚡ <span id="tokenCount">0</span> Tokens</div>
     <button class="toggle-btn" id="darkToggle">🌙 Dark Mode</button>
   </div>
 
   <div class="container">
     <h1>Hook Generator</h1>
-    <div class="card">
-      <input type="text" id="topic" placeholder="Topic (e.g., Gym Progress)">
-      <select id="platform">
-        <option value="">Select Platform</option>
-        <option value="TikTok">TikTok</option>
-        <option value="Instagram">Instagram</option>
-        <option value="Instagram">Youtube Shorts</option>
-      </select>
-      <select id="tone">
-        <option value="">Select Tone</option>
-        <option value="Funny">Funny</option>
-        <option value="Dramatic">Dramatic</option>
-        <option value="Dramatic">Informative</option>
-      </select>
-      <button class="generate-btn" id="generateBtn">Generate Hooks</button>
-      <div class="result" id="result"></div>
+
+    <div id="auth-section">
+      <input type="email" id="emailInput" placeholder="Enter your email">
+      <button class="generate-btn" onclick="signIn()">Sign In / Up via Email</button>
+    </div>
+
+    <div id="generator-ui" class="hidden">
+      <div class="card">
+        <input type="text" id="topic" placeholder="Topic (e.g., Coding Tips)">
+        <select id="platform">
+          <option value="TikTok">TikTok</option>
+          <option value="Instagram">Instagram</option>
+          <option value="YouTube Shorts">YouTube Shorts</option>
+        </select>
+        <select id="tone">
+          <option value="Funny">Funny</option>
+          <option value="Dramatic">Dramatic</option>
+          <option value="Informative">Informative</option>
+        </select>
+        <button class="generate-btn" id="generateBtn">Generate Hooks</button>
+        <div class="result" id="result"></div>
+      </div>
+      <button onclick="signOut()" style="margin-top:20px; background:none; border:none; color:gray; cursor:pointer;">Sign Out</button>
     </div>
   </div>
 
   <script>
-    // 1. Theme Toggle
-    const darkToggle = document.getElementById('darkToggle');
-    darkToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-      darkToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️ Light Mode' : '🌙 Dark Mode';
+    // INITIALIZE SUPABASE
+    const supabaseUrl = 'YOUR_SUPABASE_URL';
+    const supabaseKey = 'YOUR_PUBLISHABLE_KEY';
+    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    let currentUser = null;
+
+    // AUTH LOGIC
+    async function signIn() {
+      const email = document.getElementById('emailInput').value;
+      if (!email) return alert("Enter email!");
+      const { error } = await _supabase.auth.signInWithOtp({ email });
+      if (error) alert(error.message);
+      else alert("Check your email for the login link!");
+    }
+
+    async function signOut() {
+      await _supabase.auth.signOut();
+      location.reload();
+    }
+
+    _supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        currentUser = session.user;
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('generator-ui').classList.remove('hidden');
+        fetchTokens();
+      }
     });
 
-    // 2. Token System
-    let tokens = localStorage.getItem('userTokens') ? parseInt(localStorage.getItem('userTokens')) : 5;
-    const tokenDisplay = document.getElementById('tokenCount');
-    const generateBtn = document.getElementById('generateBtn');
-
-    function updateTokens() {
-      tokenDisplay.textContent = tokens;
-      localStorage.setItem('userTokens', tokens);
-      if (tokens <= 0) {
-        generateBtn.disabled = true;
-        generateBtn.textContent = 'No Tokens Left';
-      }
+    async function fetchTokens() {
+      const { data } = await _supabase.from('profiles').select('tokens').eq('id', currentUser.id).single();
+      if (data) document.getElementById('tokenCount').textContent = data.tokens;
     }
-    updateTokens();
 
-    // 3. API Logic
+    // GENERATE LOGIC
+    const generateBtn = document.getElementById('generateBtn');
     generateBtn.addEventListener('click', async () => {
       const topic = document.getElementById('topic').value;
       const platform = document.getElementById('platform').value;
       const tone = document.getElementById('tone').value;
-
-      if (!topic || !platform || !tone) return alert("Fill all fields!");
 
       generateBtn.disabled = true;
       generateBtn.textContent = 'Generating...';
@@ -130,17 +96,14 @@
         const response = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic, platform, tone })
+          body: JSON.stringify({ topic, platform, tone, userId: currentUser.id })
         });
 
         const data = await response.json();
-
         if (response.ok) {
-          tokens -= 1;
-          updateTokens();
-          
+          fetchTokens(); // Refresh display
           const resultDiv = document.getElementById('result');
-          resultDiv.innerHTML = '<h3>Results:</h3>';
+          resultDiv.innerHTML = '<h3>Your Hooks:</h3>';
           data.hooks.forEach(h => {
             const div = document.createElement('div');
             div.className = 'hook-item';
@@ -149,15 +112,13 @@
           });
           resultDiv.style.display = 'block';
         } else {
-          alert("Error: " + data.error);
+          alert(data.error);
         }
-      } catch (err) {
-        alert("Connection error!");
+      } catch (e) {
+        alert("Error connecting to server.");
       } finally {
-        if (tokens > 0) {
-          generateBtn.disabled = false;
-          generateBtn.textContent = 'Generate Hooks';
-        }
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate Hooks';
       }
     });
   </script>
