@@ -2,12 +2,152 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hook Generator</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <style>
-    /* ... (Keep your existing CSS here) ... */
-    #auth-section { margin-bottom: 20px; padding: 20px; border-bottom: 1px solid #ccc; }
+    /* Root variables */
+    :root {
+      --bg-light: #f7f7f7;
+      --bg-dark: #1e1e2f;
+      --card-light: #ffffff;
+      --card-dark: #2c2c3f;
+      --text-light: #1e1e2f;
+      --text-dark: #f7f7f7;
+      --accent: #ff6ec7;
+      --accent-hover: #ff3dbd;
+    }
+
+    /* Global styles */
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg-light);
+      color: var(--text-light);
+      transition: all 0.3s ease;
+    }
+
+    .dark-mode {
+      background: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      position: fixed;
+      top: 0;
+      right: 0;
+      padding: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .token-badge {
+      background: var(--accent);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 10px rgba(255, 110, 199, 0.3);
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 100px auto 50px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(90deg, #ff6ec7, #ff3dbd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 30px;
+    }
+
+    .toggle-btn {
+      background: var(--card-light);
+      border: 1px solid #ddd;
+      padding: 10px 20px;
+      color: var(--text-light);
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .dark-mode .toggle-btn {
+      background: var(--card-dark);
+      color: white;
+      border-color: #444;
+    }
+
+    .card {
+      background: var(--card-light);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    .dark-mode .card {
+      background: var(--card-dark);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .dark-mode input, .dark-mode select {
+      background: #3a3a50;
+      border: 1px solid #555;
+      color: white;
+    }
+
+    .generate-btn {
+      width: 100%;
+      margin-top: 15px;
+      padding: 15px;
+      border: none;
+      border-radius: 25px;
+      background: var(--accent);
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .generate-btn:hover { background: var(--accent-hover); }
+    .generate-btn:disabled { background: #666; cursor: not-allowed; opacity: 0.7; }
+
+    .result {
+      margin-top: 30px;
+      text-align: left;
+      display: none;
+    }
+
+    .hook-item {
+      background: rgba(255,110,199,0.1);
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      border-left: 5px solid var(--accent);
+    }
+
     .hidden { display: none; }
   </style>
 </head>
@@ -22,13 +162,17 @@
     <h1>Hook Generator</h1>
 
     <div id="auth-section">
-      <input type="email" id="emailInput" placeholder="Enter your email">
-      <button class="generate-btn" onclick="signIn()">Sign In / Up via Email</button>
+      <div class="card">
+        <h3>Welcome!</h3>
+        <p>Sign in to get your 5 free tokens.</p>
+        <input type="email" id="emailInput" placeholder="Enter your email">
+        <button class="generate-btn" onclick="signIn()">Send Magic Link</button>
+      </div>
     </div>
 
     <div id="generator-ui" class="hidden">
       <div class="card">
-        <input type="text" id="topic" placeholder="Topic (e.g., Coding Tips)">
+        <input type="text" id="topic" placeholder="Video Topic (e.g. Pasta Recipe)">
         <select id="platform">
           <option value="TikTok">TikTok</option>
           <option value="Instagram">Instagram</option>
@@ -47,14 +191,21 @@
   </div>
 
   <script>
-    // INITIALIZE SUPABASE
-    const supabaseUrl = 'YOUR_SUPABASE_URL';
-    const supabaseKey = 'YOUR_PUBLISHABLE_KEY';
+    // 1. SUPABASE CONFIG - REPLACE THESE!
+    const supabaseUrl = 'https://fkngnzovfkaukphowsat.supabase.co';
+    const supabaseKey = 'sb_publishable_95yQBhk7C5S8i66Z_iqfpA_YiK_QaAP';
     const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     let currentUser = null;
 
-    // AUTH LOGIC
+    // 2. THEME TOGGLE
+    const darkToggle = document.getElementById('darkToggle');
+    darkToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      darkToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️ Light Mode' : '🌙 Dark Mode';
+    });
+
+    // 3. AUTH LOGIC
     async function signIn() {
       const email = document.getElementById('emailInput').value;
       if (!email) return alert("Enter email!");
@@ -82,12 +233,14 @@
       if (data) document.getElementById('tokenCount').textContent = data.tokens;
     }
 
-    // GENERATE LOGIC
+    // 4. GENERATOR LOGIC
     const generateBtn = document.getElementById('generateBtn');
     generateBtn.addEventListener('click', async () => {
       const topic = document.getElementById('topic').value;
       const platform = document.getElementById('platform').value;
       const tone = document.getElementById('tone').value;
+
+      if (!topic) return alert("Enter a topic!");
 
       generateBtn.disabled = true;
       generateBtn.textContent = 'Generating...';
@@ -101,7 +254,7 @@
 
         const data = await response.json();
         if (response.ok) {
-          fetchTokens(); // Refresh display
+          fetchTokens();
           const resultDiv = document.getElementById('result');
           resultDiv.innerHTML = '<h3>Your Hooks:</h3>';
           data.hooks.forEach(h => {
