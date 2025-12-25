@@ -108,5 +108,99 @@
       }
     });
   </script>
+  <div class="token-display">Tokens: <span id="tokenCount">5</span></div>
+
+<style>
+  .token-display {
+    background: var(--accent);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 15px;
+    display: inline-block;
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+</style>
+
+<script>
+  // --- TOKEN SYSTEM LOGIC ---
+  const INITIAL_TOKENS = 5;
+  
+  // Load tokens from storage or set to initial amount
+  let tokens = localStorage.getItem('userTokens') 
+    ? parseInt(localStorage.getItem('userTokens')) 
+    : INITIAL_TOKENS;
+
+  const tokenCountSpan = document.getElementById('tokenCount');
+  
+  function updateTokenUI() {
+    tokenCountSpan.textContent = tokens;
+    localStorage.setItem('userTokens', tokens);
+    
+    // Disable button if out of tokens
+    if (tokens <= 0) {
+      generateBtn.disabled = true;
+      generateBtn.textContent = 'Out of Tokens';
+      generateBtn.style.background = '#444';
+    }
+  }
+
+  // Initialize UI on load
+  updateTokenUI();
+
+  // --- UPDATED GENERATE LOGIC ---
+  generateBtn.addEventListener('click', async () => {
+    if (tokens <= 0) {
+      alert("You need more tokens to generate hooks!");
+      return;
+    }
+
+    const topic = document.getElementById('topic').value;
+    const platform = document.getElementById('platform').value;
+    const tone = document.getElementById('tone').value;
+
+    if (!topic || !platform || !tone) {
+      alert("Please fill all fields!");
+      return;
+    }
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'AI is writing...';
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, platform, tone })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // DEDUCT TOKEN ONLY ON SUCCESS
+        tokens -= 1;
+        updateTokenUI();
+
+        resultDiv.innerHTML = '<h3>Your Hooks:</h3>';
+        data.hooks.forEach(hook => {
+          const div = document.createElement('div');
+          div.classList.add('hook-item');
+          div.textContent = hook;
+          resultDiv.appendChild(div);
+        });
+        resultDiv.style.display = 'block';
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (err) {
+      alert("Connection Error. Check Vercel logs.");
+    } finally {
+      if (tokens > 0) {
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate Hooks';
+      }
+    }
+  });
+</script>
 </body>
 </html>
