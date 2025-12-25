@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   try {
     const prompt = `Generate 5 viral hooks for a ${platform} video about ${topic} in a ${tone} tone. 
-    Format: One hook per line. No emojis. No numbers. Max 15 words.`;
+    Format: One hook per line. No emojis. No numbers. Max 15 words. Make it easy to follow, and create the hooks to maximize engagement of the video. Use other viral videos and base it off that.`;
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
