@@ -3,106 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hookly | AI Hook Generator</title>
+    <title>Hookly | AI Generator</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .view { display: none; }
-        .view.active { display: block; }
-        body { background-color: #0f172a; color: white; }
+        .view.active { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        body { background-color: #0f172a; color: white; min-h-screen; }
     </style>
 </head>
-<body>
+<body class="min-h-screen">
 
-    <section id="view-landing" class="view active min-h-screen flex flex-col items-center justify-center px-6 text-center">
-        <h1 class="text-6xl font-black mb-6 bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">HOOKLY</h1>
-        <p class="text-xl text-slate-400 mb-10 max-w-lg">The AI tool that writes viral hooks for you. Stop wasting hours on scripts.</p>
-        <button onclick="showView('view-login')" class="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-2xl font-bold text-xl shadow-lg shadow-blue-500/20 transition">Get Started Free</button>
+    <section id="view-landing" class="view active min-h-screen p-6">
+        <h1 class="text-6xl font-black mb-4 bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">HOOKLY</h1>
+        <p class="text-slate-400 text-lg mb-8 max-w-md">Generate viral hooks in seconds. The #1 tool for creators.</p>
+        <button onclick="showView('view-login')" class="bg-blue-600 px-10 py-4 rounded-2xl font-bold text-xl hover:scale-105 transition">Start For Free</button>
     </section>
 
-    <section id="view-login" class="view min-h-screen flex items-center justify-center px-6">
+    <section id="view-login" class="view min-h-screen p-6">
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl w-full max-w-md">
-            <h2 class="text-3xl font-bold mb-2">Welcome</h2>
-            <p class="text-slate-400 mb-6">Login with your email for a magic link.</p>
-            <input type="email" id="email" placeholder="email@example.com" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl mb-4 text-white outline-none focus:border-blue-500">
+            <h2 class="text-3xl font-bold mb-2 text-center">Login</h2>
+            <p class="text-slate-400 mb-6 text-center">We'll email you a magic login link.</p>
+            <input type="email" id="email" placeholder="name@example.com" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl mb-4 text-white text-center outline-none">
             <button onclick="handleLogin()" id="loginBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Send Magic Link</button>
-            <button onclick="showView('view-landing')" class="w-full mt-4 text-slate-500 text-sm">← Back</button>
+            <button onclick="showView('view-landing')" class="mt-4 text-slate-500 w-full text-center">← Back</button>
         </div>
     </section>
 
-    <section id="view-app" class="view min-h-screen">
-        <nav class="p-6 border-b border-slate-800 flex justify-between items-center">
-            <span class="font-bold text-xl text-blue-400">Hookly App</span>
-            <button onclick="handleLogout()" class="text-slate-400 hover:text-white">Logout</button>
-        </nav>
-        <main class="max-w-2xl mx-auto py-12 px-6">
-            <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl">
-                <textarea id="topic" placeholder="What is your video about?" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl h-32 mb-4 text-white outline-none focus:border-blue-500"></textarea>
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <select id="platform" class="bg-slate-950 border border-slate-800 p-3 rounded-lg"><option>TikTok</option><option>Instagram</option></select>
-                    <select id="tone" class="bg-slate-950 border border-slate-800 p-3 rounded-lg"><option>Viral</option><option>Professional</option></select>
-                </div>
-                <button onclick="generate()" id="genBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-500/20">Generate Hooks (-1 Token)</button>
-                <div id="results" class="mt-8 space-y-4"></div>
+    <section id="view-app" class="view min-h-screen p-6">
+        <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-center">Hook Generator</h2>
+            <textarea id="topic" placeholder="What's your video about?" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl h-32 mb-4 text-white text-center outline-none"></textarea>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <select id="platform" class="bg-slate-950 border border-slate-800 p-3 rounded-lg text-center"><option>TikTok</option><option>Instagram</option></select>
+                <select id="tone" class="bg-slate-950 border border-slate-800 p-3 rounded-lg text-center"><option>Viral</option><option>Aggressive</option></select>
             </div>
-        </main>
+
+            <button onclick="generate()" id="genBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold mb-6 hover:bg-blue-500">Generate (-1 Token)</button>
+            
+            <div id="results" class="space-y-4 text-left"></div>
+            <button onclick="handleLogout()" class="mt-8 text-slate-500 text-sm w-full text-center">Logout</button>
+        </div>
     </section>
 
     <script>
-        // --- CONFIGURATION ---
-        const SUPABASE_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // REPLACE THESE WITH YOUR ACTUAL KEYS FROM SUPABASE
+        const SUPABASE_URL = 'https://your-project.supabase.co';
+        const SUPABASE_KEY = 'your-anon-key';
+        
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch(e) { console.error("Supabase failed to load."); }
 
-        // --- VIEW CONTROLLER ---
-        function showView(viewId) {
+        function showView(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
+            document.getElementById(id).classList.add('active');
         }
 
-        // --- AUTH LOGIC ---
         async function handleLogin() {
             const email = document.getElementById('email').value;
+            if(!email) return alert("Enter email");
             const { error } = await supabase.auth.signInWithOtp({ email });
-            if (error) alert(error.message);
-            else alert("Check your email for the login link!");
+            alert(error ? error.message : "Magic link sent! Check your email.");
         }
 
         async function handleLogout() {
             await supabase.auth.signOut();
-            showView('view-landing');
+            location.reload();
         }
 
-        // Check if user is already logged in on load
-        async function init() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                window.currentUser = user;
-                showView('view-app');
-            }
-        }
-        init();
-
-        // --- GENERATION LOGIC ---
         async function generate() {
             const topic = document.getElementById('topic').value;
             const btn = document.getElementById('genBtn');
-            if(!topic) return alert("Enter a topic!");
+            if(!topic) return alert("Enter a topic");
 
-            btn.disabled = true; btn.innerText = "Generating...";
+            const { data: { user } } = await supabase.auth.getUser();
+            if(!user) return alert("Login first");
+
+            btn.innerText = "Generating..."; btn.disabled = true;
+
             try {
                 const res = await fetch('/api/generate.mjs', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic, userId: window.currentUser.id, platform: document.getElementById('platform').value, tone: document.getElementById('tone').value })
+                    body: JSON.stringify({ topic, userId: user.id, platform: document.getElementById('platform').value, tone: document.getElementById('tone').value })
                 });
                 const data = await res.json();
                 if(!res.ok) throw new Error(data.error);
 
-                document.getElementById('results').innerHTML = data.hooks.map(h => `<div class="bg-slate-950 p-4 rounded-xl border border-slate-800">${h}</div>`).join('');
-            } catch (e) { alert(e.message); }
-            finally { btn.disabled = false; btn.innerText = "Generate Hooks (-1 Token)"; }
+                document.getElementById('results').innerHTML = data.hooks.map(h => 
+                    `<div class="bg-slate-950 p-4 rounded-xl border border-slate-800 border-l-4 border-l-blue-500">${h}</div>`
+                ).join('');
+            } catch(e) { alert(e.message); }
+            finally { btn.innerText = "Generate (-1 Token)"; btn.disabled = false; }
         }
+
+        // Auto-check login status
+        async function init() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if(user) { window.currentUser = user; showView('view-app'); }
+        }
+        init();
     </script>
 </body>
 </html>
