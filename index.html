@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hook Generator | Viral AI Hooks</title>
+  <title>HookSnap | AI Viral Hook Generator</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     :root {
       --bg-light: #f7f7f7; --bg-dark: #121218;
@@ -24,31 +25,26 @@
 
     /* Layouts */
     .container { max-width: 800px; margin: 120px auto 50px; padding: 20px; text-align: center; }
-    .card { background: var(--card-light); padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: 0.3s; }
+    .card { background: var(--card-light); padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
     .dark-mode .card { background: var(--card-dark); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
 
-    /* Typography */
     h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 20px; background: linear-gradient(90deg, #ff6ec7, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    p.subtitle { font-size: 1.2rem; opacity: 0.8; margin-bottom: 40px; }
-
-    /* Buttons & Inputs */
     .btn { padding: 16px 32px; border-radius: 50px; border: none; font-weight: 600; font-size: 1.1rem; cursor: pointer; transition: 0.2s; width: 100%; }
     .btn-primary { background: var(--accent); color: white; }
-    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 110, 199, 0.4); }
     .btn-google { background: white; color: #333; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px; }
     
     input, select { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ccc; box-sizing: border-box; font-size: 1rem; }
     .dark-mode input, .dark-mode select { background: #2a2a35; border-color: #444; color: white; }
 
-    /* Popups */
+    /* Overlays */
     .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(5px); }
     .popup-card { background: var(--card-light); padding: 40px; border-radius: 30px; text-align: center; max-width: 400px; animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .dark-mode .popup-card { background: var(--card-dark); }
     @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    /* Results */
-    .result-box { margin-top: 30px; text-align: left; }
-    .hook-item { background: rgba(255,110,199,0.1); padding: 18px; border-radius: 15px; margin-bottom: 12px; border-left: 6px solid var(--accent); position: relative; }
+    .hook-item { background: rgba(255,110,199,0.1); padding: 18px; border-radius: 15px; margin-bottom: 12px; border-left: 6px solid var(--accent); display: flex; justify-content: space-between; align-items: center; text-align: left; }
+    .copy-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; }
   </style>
 </head>
 <body>
@@ -59,28 +55,23 @@
   </div>
 
   <div id="landing-page" class="container">
-    <h1>Stop the Scroll. <br>Go Viral.</h1>
-    <p class="subtitle">Generate high-retention hooks for TikTok, Reels, and Shorts using AI trained on viral data.</p>
+    <h1>Hook<span style="color:var(--accent)">Snap</span></h1>
+    <p style="font-size:1.3rem; opacity:0.8; margin-bottom:40px;">Stop the scroll. Go viral. AI-powered hooks for creators.</p>
     <div style="max-width: 400px; margin: 0 auto;">
-      <button class="btn btn-primary" onclick="showAuth()">Get Started — It's Free</button>
+      <button class="btn btn-primary" onclick="showPage('auth-page')">Get Started Free</button>
       <p style="margin-top:15px; font-size:0.9rem; opacity:0.6;">✨ 5 Free Tokens for new accounts</p>
     </div>
   </div>
 
   <div id="auth-page" class="container hidden">
     <div class="card" style="max-width: 400px; margin: 0 auto;">
-      <h2>Join the Club</h2>
-      <p style="margin-bottom:25px; opacity:0.7;">Sign in to claim your tokens.</p>
-      
+      <h2>Welcome</h2>
       <button class="btn btn-google" onclick="signInWithGoogle()">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/controller/google.svg" width="18"> Continue with Google
       </button>
-
       <div style="margin: 20px 0; opacity: 0.3;">OR</div>
-
       <input type="email" id="emailInput" placeholder="Email Address">
-      <button class="btn btn-primary" onclick="signInWithEmail()">Send One Time Login Code</button>
-      
+      <button class="btn btn-primary" onclick="signInWithEmail()">Send Magic Link</button>
       <button onclick="location.reload()" style="margin-top:20px; background:none; border:none; color:gray; cursor:pointer; text-decoration: underline;">← Back</button>
     </div>
   </div>
@@ -88,7 +79,7 @@
   <div id="generator-ui" class="container hidden">
     <div class="card">
       <h2 style="margin-top:0;">Create Hooks</h2>
-      <input type="text" id="topic" placeholder="Video Topic (e.g. How to stay productive)">
+      <input type="text" id="topic" placeholder="Video Topic (e.g. 5 steps to better sleep)">
       <select id="platform">
         <option value="TikTok">TikTok</option>
         <option value="Instagram Reels">Instagram Reels</option>
@@ -98,40 +89,40 @@
         <option value="Funny">Funny</option>
         <option value="Educational">Educational</option>
         <option value="Dramatic">Dramatic</option>
-        <option value="Controversial">Controversial</option>
       </select>
       <button class="btn btn-primary" id="generateBtn">Generate Hooks (1 Token)</button>
-      
-      <div id="result" class="result-box hidden"></div>
+      <div id="result" class="hidden" style="margin-top:30px;"></div>
     </div>
     <button onclick="signOut()" style="margin-top:30px; opacity:0.5; background:none; border:none; color:inherit; cursor:pointer;">Sign Out</button>
   </div>
 
   <div id="success-popup" class="overlay hidden">
     <div class="popup-card">
-      <div style="font-size: 50px; margin-bottom: 10px;">🎉</div>
-      <h2>Welcome!</h2>
-      <p>We've credited your account with <strong>5 Free Tokens</strong>. Go create something viral!</p>
-      <button class="btn btn-primary" onclick="closePopup()">Start Generating</button>
+      <div style="font-size: 50px;">🎉</div>
+      <h2>Welcome to HookSnap!</h2>
+      <p>We've added <strong>5 Free Tokens</strong> to your account.</p>
+      <button class="btn btn-primary" onclick="closePopup()">Let's Cook</button>
     </div>
   </div>
 
   <script>
-    // --- CONFIG ---
     const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
-    const SB_KEY = 'sb_publishable_95yQBhk7C5S8i66Z_iqfpA_YiK_QaAP';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
     let currentUser = null;
 
-    // --- UI HELPERS ---
-    const showAuth = () => {
-      document.getElementById('landing-page').classList.add('hidden');
-      document.getElementById('auth-page').classList.remove('hidden');
+    function showPage(pageId) {
+      document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+      document.getElementById(pageId).classList.remove('hidden');
     }
-    const closePopup = () => document.getElementById('success-popup').classList.add('hidden');
 
-    // --- AUTH LOGIC ---
+    function closePopup() { document.getElementById('success-popup').classList.add('hidden'); }
+
+    function triggerConfetti() {
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff6ec7', '#8b5cf6'] });
+    }
+
     async function signInWithEmail() {
       const email = document.getElementById('emailInput').value;
       const { error } = await _supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin }});
@@ -139,25 +130,21 @@
     }
 
     async function signInWithGoogle() {
-      await _supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin }});
+      await _supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin, skipNonceCheck: true }});
     }
 
-    async function signOut() {
-      await _supabase.auth.signOut();
-      location.reload();
-    }
+    async function signOut() { await _supabase.auth.signOut(); location.reload(); }
 
     _supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
         currentUser = session.user;
-        document.getElementById('landing-page').classList.add('hidden');
-        document.getElementById('auth-page').classList.add('hidden');
-        document.getElementById('generator-ui').classList.remove('hidden');
+        showPage('generator-ui');
         document.getElementById('token-badge-ui').classList.remove('hidden');
         
-        const isNew = currentUser.created_at === currentUser.last_sign_in_at;
+        const isNew = (new Date() - new Date(currentUser.created_at)) < 15000;
         if (isNew && !sessionStorage.getItem('notified')) {
           document.getElementById('success-popup').classList.remove('hidden');
+          triggerConfetti();
           sessionStorage.setItem('notified', 'true');
         }
         fetchTokens();
@@ -169,24 +156,21 @@
       if (data) document.getElementById('tokenCount').textContent = data.tokens;
     }
 
-    // --- GENERATION LOGIC ---
     const generateBtn = document.getElementById('generateBtn');
     generateBtn.addEventListener('click', async () => {
       const topic = document.getElementById('topic').value;
       if (!topic) return alert("Enter a topic!");
 
       generateBtn.disabled = true;
-      generateBtn.textContent = 'AI is cooking...';
+      generateBtn.textContent = 'Generating...';
 
       try {
         const response = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            topic, 
-            platform: document.getElementById('platform').value, 
-            tone: document.getElementById('tone').value,
-            userId: currentUser.id 
+            topic, platform: document.getElementById('platform').value, 
+            tone: document.getElementById('tone').value, userId: currentUser.id 
           })
         });
 
@@ -194,29 +178,20 @@
         if (response.ok) {
           fetchTokens();
           const resDiv = document.getElementById('result');
-          resDiv.innerHTML = '<h3>Hooks for you:</h3>';
+          resDiv.innerHTML = '<h3>Your Hooks:</h3>';
           data.hooks.forEach(h => {
             const div = document.createElement('div');
             div.className = 'hook-item';
-            div.textContent = h;
+            div.innerHTML = `<span>${h}</span><button class="copy-btn" onclick="navigator.clipboard.writeText('${h.replace(/'/g, "\\'")}'); alert('Copied!')">📋</button>`;
             resDiv.appendChild(div);
           });
           resDiv.classList.remove('hidden');
-        } else {
-          alert(data.error);
-        }
-      } catch (e) {
-        alert("Server error.");
-      } finally {
-        generateBtn.disabled = false;
-        generateBtn.textContent = 'Generate Hooks (1 Token)';
-      }
+        } else { alert(data.error); }
+      } catch (e) { alert("Server error."); }
+      finally { generateBtn.disabled = false; generateBtn.textContent = 'Generate Hooks (1 Token)'; }
     });
 
-    // Dark Mode
-    document.getElementById('darkToggle').onclick = () => {
-      document.body.classList.toggle('dark-mode');
-    }
+    document.getElementById('darkToggle').onclick = () => document.body.classList.toggle('dark-mode');
   </script>
 </body>
 </html>
