@@ -57,48 +57,7 @@
     .hook-item { background: rgba(255,110,199,0.1); padding: 18px; border-radius: 15px; margin-bottom: 12px; border-left: 6px solid var(--accent); display: flex; justify-content: space-between; align-items: center; text-align: left; }
     .copy-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; filter: grayscale(1); transition: 0.2s; }
     .copy-btn:hover { filter: grayscale(0); transform: scale(1.1); }
-    /* Top-Left Notification Style */
-.notification-toast {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  width: 320px;
-  background: var(--card-light);
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-  z-index: 3000;
-  padding: 20px;
-  text-align: left;
-  border-left: 5px solid var(--accent);
-  animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
 
-.dark-mode .notification-toast {
-  background: var(--card-dark);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-}
-
-@keyframes slideIn {
-  from { transform: translateX(-120%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-.close-toast {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  color: #888;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.close-toast:hover { color: var(--accent); }
-
-.toast-content h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
-.toast-content p { margin: 0; font-size: 0.9rem; opacity: 0.8; }
   </style>
 </head>
 <body>
