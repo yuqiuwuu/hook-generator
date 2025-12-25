@@ -3,110 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hookly | Viral AI Hooks</title>
+    <title>Hookly | AI Hook Generator</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #0f172a; color: white; }
-        .gradient-text { background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; color: transparent; }
+        .view { display: none; }
+        .view.active { display: block; }
+        body { background-color: #0f172a; color: white; }
     </style>
 </head>
-<body class="min-h-screen">
-    <nav class="p-6 flex justify-between items-center max-w-6xl mx-auto">
-        <h1 class="text-2xl font-bold gradient-text">Hookly.ai</h1>
-        <div id="auth-status">
-            <button onclick="login()" class="bg-blue-600 px-5 py-2 rounded-lg font-medium hover:bg-blue-700">Login</button>
+<body>
+
+    <section id="view-landing" class="view active min-h-screen flex flex-col items-center justify-center px-6 text-center">
+        <h1 class="text-6xl font-black mb-6 bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">HOOKLY</h1>
+        <p class="text-xl text-slate-400 mb-10 max-w-lg">The AI tool that writes viral hooks for you. Stop wasting hours on scripts.</p>
+        <button onclick="showView('view-login')" class="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-2xl font-bold text-xl shadow-lg shadow-blue-500/20 transition">Get Started Free</button>
+    </section>
+
+    <section id="view-login" class="view min-h-screen flex items-center justify-center px-6">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl w-full max-w-md">
+            <h2 class="text-3xl font-bold mb-2">Welcome</h2>
+            <p class="text-slate-400 mb-6">Login with your email for a magic link.</p>
+            <input type="email" id="email" placeholder="email@example.com" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl mb-4 text-white outline-none focus:border-blue-500">
+            <button onclick="handleLogin()" id="loginBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Send Magic Link</button>
+            <button onclick="showView('view-landing')" class="w-full mt-4 text-slate-500 text-sm">← Back</button>
         </div>
-    </nav>
+    </section>
 
-    <header class="text-center py-20 px-4">
-        <h2 class="text-5xl md:text-7xl font-extrabold mb-6">Stop Scrolling. <br><span class="gradient-text">Start Hooking.</span></h2>
-        <p class="text-gray-400 text-lg max-w-2xl mx-auto">Generate high-converting viral hooks for TikTok, Reels, and X in seconds using Llama 3 AI.</p>
-    </header>
-
-    <main class="max-w-2xl mx-auto px-6 pb-20">
-        <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl">
-            <div class="space-y-4">
-                <div>
-                    <label class="text-sm text-gray-400">What is your video about?</label>
-                    <input type="text" id="topic" placeholder="e.g. 5 ways to cook eggs" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500 outline-none">
+    <section id="view-app" class="view min-h-screen">
+        <nav class="p-6 border-b border-slate-800 flex justify-between items-center">
+            <span class="font-bold text-xl text-blue-400">Hookly App</span>
+            <button onclick="handleLogout()" class="text-slate-400 hover:text-white">Logout</button>
+        </nav>
+        <main class="max-w-2xl mx-auto py-12 px-6">
+            <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl">
+                <textarea id="topic" placeholder="What is your video about?" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl h-32 mb-4 text-white outline-none focus:border-blue-500"></textarea>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <select id="platform" class="bg-slate-950 border border-slate-800 p-3 rounded-lg"><option>TikTok</option><option>Instagram</option></select>
+                    <select id="tone" class="bg-slate-950 border border-slate-800 p-3 rounded-lg"><option>Viral</option><option>Professional</option></select>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-sm text-gray-400">Platform</label>
-                        <select id="platform" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg mt-1">
-                            <option>TikTok</option>
-                            <option>Instagram</option>
-                            <option>X (Twitter)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-sm text-gray-400">Tone</label>
-                        <select id="tone" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg mt-1">
-                            <option>Viral</option>
-                            <option>Educational</option>
-                            <option>Aggressive</option>
-                        </select>
-                    </div>
-                </div>
-                <button onclick="generate()" id="genBtn" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 p-4 rounded-lg font-bold text-lg hover:opacity-90 transition">
-                    Generate Hooks (-1 Token)
-                </button>
+                <button onclick="generate()" id="genBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-500/20">Generate Hooks (-1 Token)</button>
+                <div id="results" class="mt-8 space-y-4"></div>
             </div>
-
-            <div id="results" class="hidden mt-8 space-y-4">
-                <h3 class="font-bold text-blue-400">Your Hooks:</h3>
-                <div id="hookList" class="space-y-3"></div>
-            </div>
-        </div>
-    </main>
+        </main>
+    </section>
 
     <script>
-        // INIT SUPABASE (Replace with your keys)
-        const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+        // --- CONFIGURATION ---
+        const SUPABASE_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // --- VIEW CONTROLLER ---
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        // --- AUTH LOGIC ---
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const { error } = await supabase.auth.signInWithOtp({ email });
+            if (error) alert(error.message);
+            else alert("Check your email for the login link!");
+        }
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            showView('view-landing');
+        }
+
+        // Check if user is already logged in on load
+        async function init() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                window.currentUser = user;
+                showView('view-app');
+            }
+        }
+        init();
+
+        // --- GENERATION LOGIC ---
         async function generate() {
             const topic = document.getElementById('topic').value;
-            const platform = document.getElementById('platform').value;
-            const tone = document.getElementById('tone').value;
             const btn = document.getElementById('genBtn');
+            if(!topic) return alert("Enter a topic!");
 
-            // 1. Get real User ID from Supabase Auth
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return alert("Please login first!");
-
-            btn.disabled = true;
-            btn.innerText = "Writing magic...";
-
+            btn.disabled = true; btn.innerText = "Generating...";
             try {
                 const res = await fetch('/api/generate.mjs', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic, platform, tone, userId: user.id })
+                    body: JSON.stringify({ topic, userId: window.currentUser.id, platform: document.getElementById('platform').value, tone: document.getElementById('tone').value })
                 });
-
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error);
+                if(!res.ok) throw new Error(data.error);
 
-                // Show Results
-                document.getElementById('results').classList.remove('hidden');
-                document.getElementById('hookList').innerHTML = data.hooks
-                    .map(h => `<div class="bg-slate-900 p-4 rounded-lg border border-slate-700">${h}</div>`)
-                    .join('');
-
-            } catch (err) {
-                alert(err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Generate Hooks (-1 Token)";
-            }
-        }
-
-        async function login() {
-            // This triggers a simple email login or you can setup Google
-            const email = prompt("Enter email:");
-            await supabase.auth.signInWithOtp({ email });
-            alert("Check your email for login link!");
+                document.getElementById('results').innerHTML = data.hooks.map(h => `<div class="bg-slate-950 p-4 rounded-xl border border-slate-800">${h}</div>`).join('');
+            } catch (e) { alert(e.message); }
+            finally { btn.disabled = false; btn.innerText = "Generate Hooks (-1 Token)"; }
         }
     </script>
 </body>
