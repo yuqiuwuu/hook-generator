@@ -10,39 +10,80 @@
       --bg-light: #f7f7f7; --bg-dark: #1e1e2f;
       --card-light: #ffffff; --card-dark: #2c2c3f;
       --text-light: #1e1e2f; --text-dark: #f7f7f7;
-      --accent: #ff6ec7; --accent-hover: #ff3dbd;
+      --accent: #ff6ec7;
     }
+
     body { font-family: 'Poppins', sans-serif; margin: 0; background: var(--bg-light); color: var(--text-light); transition: 0.3s; }
     .dark-mode { background: var(--bg-dark); color: var(--text-dark); }
-    .container { max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
-    .card { background: var(--card-light); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      position: fixed;
+      top: 0;
+      right: 0;
+      padding: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .token-badge {
+      background: var(--accent);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 10px rgba(255, 110, 199, 0.3);
+    }
+
+    .toggle-btn {
+      background: var(--card-light);
+      border: 1px solid #ddd;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    .dark-mode .toggle-btn { background: var(--card-dark); border-color: #444; color: white; }
+
+    /* Main UI */
+    .container { max-width: 500px; margin: 100px auto 50px; padding: 20px; text-align: center; }
+    .card { background: var(--card-light); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
     .dark-mode .card { background: var(--card-dark); }
+
     input, select { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ccc; box-sizing: border-box; }
     .dark-mode input, .dark-mode select { background: #3a3a50; border: 1px solid #555; color: white; }
+
     .generate-btn { width: 100%; padding: 15px; border: none; border-radius: 25px; background: var(--accent); color: white; font-weight: 600; cursor: pointer; margin-top: 10px; }
-    .generate-btn:disabled { background: #888; cursor: not-allowed; }
+    .generate-btn:disabled { background: #666; cursor: not-allowed; opacity: 0.7; }
+
     .result { margin-top: 25px; text-align: left; display: none; }
     .hook-item { background: rgba(255,110,199,0.1); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid var(--accent); }
-    .toggle-btn { position: fixed; top: 20px; right: 20px; background: var(--accent); border: none; padding: 8px 15px; color: white; border-radius: 20px; cursor: pointer; }
   </style>
 </head>
 <body>
-  <button class="toggle-btn" id="darkToggle">🌙 Dark Mode</button>
+
+  <div class="top-nav">
+    <div class="token-badge">⚡ <span id="tokenCount">5</span> Tokens</div>
+    <button class="toggle-btn" id="darkToggle">🌙 Dark Mode</button>
+  </div>
+
   <div class="container">
     <h1>Hook Generator</h1>
     <div class="card">
-      <input type="text" id="topic" placeholder="Video Topic (e.g., Morning Routine)">
+      <input type="text" id="topic" placeholder="Topic (e.g., Gym Progress)">
       <select id="platform">
         <option value="">Select Platform</option>
         <option value="TikTok">TikTok</option>
         <option value="Instagram">Instagram</option>
-        <option value="YouTube Shorts">YouTube Shorts</option>
       </select>
       <select id="tone">
         <option value="">Select Tone</option>
         <option value="Funny">Funny</option>
         <option value="Dramatic">Dramatic</option>
-        <option value="Informative">Informative</option>
       </select>
       <button class="generate-btn" id="generateBtn">Generate Hooks</button>
       <div class="result" id="result"></div>
@@ -50,34 +91,40 @@
   </div>
 
   <script>
-    // Dark Mode Logic
+    // 1. Theme Toggle
     const darkToggle = document.getElementById('darkToggle');
     darkToggle.addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
       darkToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️ Light Mode' : '🌙 Dark Mode';
     });
 
-    // API Generation Logic
+    // 2. Token System
+    let tokens = localStorage.getItem('userTokens') ? parseInt(localStorage.getItem('userTokens')) : 5;
+    const tokenDisplay = document.getElementById('tokenCount');
     const generateBtn = document.getElementById('generateBtn');
-    const resultDiv = document.getElementById('result');
 
+    function updateTokens() {
+      tokenDisplay.textContent = tokens;
+      localStorage.setItem('userTokens', tokens);
+      if (tokens <= 0) {
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'No Tokens Left';
+      }
+    }
+    updateTokens();
+
+    // 3. API Logic
     generateBtn.addEventListener('click', async () => {
       const topic = document.getElementById('topic').value;
       const platform = document.getElementById('platform').value;
       const tone = document.getElementById('tone').value;
 
-      if (!topic || !platform || !tone) {
-        alert("Please fill in all fields!");
-        return;
-      }
+      if (!topic || !platform || !tone) return alert("Fill all fields!");
 
-      // UI Loading State
       generateBtn.disabled = true;
-      generateBtn.textContent = 'AI is writing...';
-      resultDiv.style.display = 'none';
+      generateBtn.textContent = 'Generating...';
 
       try {
-        // IMPORTANT: The path must match your file name in the /api folder
         const response = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -87,120 +134,30 @@
         const data = await response.json();
 
         if (response.ok) {
-          resultDiv.innerHTML = '<h3>Your Hooks:</h3>';
-          data.hooks.forEach(hook => {
+          tokens -= 1;
+          updateTokens();
+          
+          const resultDiv = document.getElementById('result');
+          resultDiv.innerHTML = '<h3>Results:</h3>';
+          data.hooks.forEach(h => {
             const div = document.createElement('div');
-            div.classList.add('hook-item');
-            div.textContent = hook;
+            div.className = 'hook-item';
+            div.textContent = h;
             resultDiv.appendChild(div);
           });
           resultDiv.style.display = 'block';
         } else {
-          // Shows specific server errors (like 404 or 500)
-          alert(`Error ${response.status}: ${data.error || 'Server failed'}`);
+          alert("Error: " + data.error);
         }
       } catch (err) {
-        alert("Connection Error: Check your internet or Vercel logs.");
-        console.error(err);
+        alert("Connection error!");
       } finally {
-        generateBtn.disabled = false;
-        generateBtn.textContent = 'Generate Hooks';
+        if (tokens > 0) {
+          generateBtn.disabled = false;
+          generateBtn.textContent = 'Generate Hooks';
+        }
       }
     });
   </script>
-  <div class="token-display">Tokens: <span id="tokenCount">5</span></div>
-
-<style>
-  .token-display {
-    background: var(--accent);
-    color: white;
-    padding: 5px 15px;
-    border-radius: 15px;
-    display: inline-block;
-    margin-bottom: 15px;
-    font-weight: 600;
-  }
-</style>
-
-<script>
-  // --- TOKEN SYSTEM LOGIC ---
-  const INITIAL_TOKENS = 5;
-  
-  // Load tokens from storage or set to initial amount
-  let tokens = localStorage.getItem('userTokens') 
-    ? parseInt(localStorage.getItem('userTokens')) 
-    : INITIAL_TOKENS;
-
-  const tokenCountSpan = document.getElementById('tokenCount');
-  
-  function updateTokenUI() {
-    tokenCountSpan.textContent = tokens;
-    localStorage.setItem('userTokens', tokens);
-    
-    // Disable button if out of tokens
-    if (tokens <= 0) {
-      generateBtn.disabled = true;
-      generateBtn.textContent = 'Out of Tokens';
-      generateBtn.style.background = '#444';
-    }
-  }
-
-  // Initialize UI on load
-  updateTokenUI();
-
-  // --- UPDATED GENERATE LOGIC ---
-  generateBtn.addEventListener('click', async () => {
-    if (tokens <= 0) {
-      alert("You need more tokens to generate hooks!");
-      return;
-    }
-
-    const topic = document.getElementById('topic').value;
-    const platform = document.getElementById('platform').value;
-    const tone = document.getElementById('tone').value;
-
-    if (!topic || !platform || !tone) {
-      alert("Please fill all fields!");
-      return;
-    }
-
-    generateBtn.disabled = true;
-    generateBtn.textContent = 'AI is writing...';
-
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, platform, tone })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // DEDUCT TOKEN ONLY ON SUCCESS
-        tokens -= 1;
-        updateTokenUI();
-
-        resultDiv.innerHTML = '<h3>Your Hooks:</h3>';
-        data.hooks.forEach(hook => {
-          const div = document.createElement('div');
-          div.classList.add('hook-item');
-          div.textContent = hook;
-          resultDiv.appendChild(div);
-        });
-        resultDiv.style.display = 'block';
-      } else {
-        alert(`Error: ${data.error}`);
-      }
-    } catch (err) {
-      alert("Connection Error. Check Vercel logs.");
-    } finally {
-      if (tokens > 0) {
-        generateBtn.disabled = false;
-        generateBtn.textContent = 'Generate Hooks';
-      }
-    }
-  });
-</script>
 </body>
 </html>
