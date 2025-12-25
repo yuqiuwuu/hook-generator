@@ -20,7 +20,7 @@
     .dark-mode { background: var(--bg-dark); color: var(--text-dark); }
     .hidden { display: none !important; }
 
-    /* Nav */
+    /* Navigation */
     .top-nav { position: fixed; top: 0; right: 0; padding: 20px; display: flex; gap: 15px; align-items: center; z-index: 1000; }
     .token-badge { background: var(--accent); color: white; padding: 8px 18px; border-radius: 20px; font-weight: 600; box-shadow: 0 4px 12px rgba(255, 110, 199, 0.3); }
 
@@ -33,8 +33,8 @@
     
     /* Google Button Styles */
     .btn-google {
-      display: flex; align-items: center; justify-content: center; width: 100%; max-width: 350px; height: 48px;
-      background-color: #ffffff; color: #3c4043; border: 1px solid #dadce0; border-radius: 24px;
+      display: flex; align-items: center; justify-content: center; width: 100%; max-width: 350px; height: 50px;
+      background-color: #ffffff; color: #3c4043; border: 1px solid #dadce0; border-radius: 25px;
       margin: 0 auto 15px auto; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s;
     }
     .btn-google:hover { background-color: #f8f9fa; border-color: #d2e3fc; box-shadow: 0 1px 3px rgba(60,64,67, 0.3); }
@@ -48,16 +48,26 @@
     input, select { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ccc; font-size: 1rem; box-sizing: border-box; }
     .dark-mode input, .dark-mode select { background: #2a2a35; color: white; border-color: #444; }
 
-    /* Popup */
-    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px); }
-    .popup-card { background: var(--card-light); padding: 40px; border-radius: 30px; text-align: center; max-width: 400px; animation: pop 0.4s ease-out; }
-    .dark-mode .popup-card { background: var(--card-dark); }
-    @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    /* Top-Left Notification Toast */
+    .notification-toast {
+      position: fixed; top: 20px; left: 20px; width: 320px; background: var(--card-light);
+      border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 3000;
+      padding: 20px; text-align: left; border-left: 5px solid var(--accent);
+      animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .dark-mode .notification-toast { background: var(--card-dark); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    
+    @keyframes slideIn {
+      from { transform: translateX(-120%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
 
+    .close-toast { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; color: #888; cursor: pointer; line-height: 1; }
+    .close-toast:hover { color: var(--accent); }
+
+    /* Results */
     .hook-item { background: rgba(255,110,199,0.1); padding: 18px; border-radius: 15px; margin-bottom: 12px; border-left: 6px solid var(--accent); display: flex; justify-content: space-between; align-items: center; text-align: left; }
     .copy-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; filter: grayscale(1); transition: 0.2s; }
-    .copy-btn:hover { filter: grayscale(0); transform: scale(1.1); }
-
   </style>
 </head>
 <body>
@@ -67,9 +77,17 @@
     <button id="darkToggle" style="background:none; border:none; cursor:pointer; font-size:1.5rem;">🌙</button>
   </div>
 
+  <div id="success-popup" class="notification-toast hidden">
+    <button class="close-toast" onclick="closePopup()">×</button>
+    <div class="toast-content">
+      <h3 style="margin:0; font-size:1.1rem;">🎊 Welcome to Hookly!</h3>
+      <p style="margin:5px 0 0 0; font-size:0.9rem; opacity:0.8;">We've credited your account with <strong>5 Free Tokens</strong>. Happy creating!</p>
+    </div>
+  </div>
+
   <div id="landing-page" class="container">
     <h1>Hook<span style="color:var(--accent)">ly</span></h1>
-    <p style="font-size:1.3rem; opacity:0.8; margin-bottom:40px;">Viral-ready hooks for short-form creators.</p>
+    <p style="font-size:1.3rem; opacity:0.8; margin-bottom:40px;">Stop the scroll. Go viral. AI hooks for creators.</p>
     <div style="max-width: 400px; margin: 0 auto;">
       <button class="btn-primary" onclick="showAuth()">Get Started — It's Free</button>
       <p style="margin-top:15px; font-size:0.9rem; opacity:0.5;">Claim 5 free tokens on signup</p>
@@ -98,57 +116,51 @@
 
   <div id="generator-ui" class="container hidden">
     <div class="card">
-      <h2 style="margin:0 0 20px 0;">Create Viral Hooks</h2>
-      <input type="text" id="topic" placeholder="Video Topic (e.g., Cooking Hacks)">
+      <h2 style="margin:0 0 20px 0;">Create Hooks</h2>
+      <input type="text" id="topic" placeholder="Topic (e.g., Morning Routine)">
       <select id="platform">
         <option value="TikTok">TikTok</option>
-        <option value="Instagram Reels">Instagram Reels</option>
         <option value="YouTube Shorts">YouTube Shorts</option>
       </select>
       <select id="tone">
         <option value="Funny">Funny</option>
         <option value="Educational">Educational</option>
-        <option value="Dramatic">Dramatic</option>
       </select>
       <button class="btn-primary" id="generateBtn">Generate Hooks (1 Token)</button>
-      
       <div id="result" class="hidden" style="margin-top:30px;"></div>
     </div>
     <button onclick="signOut()" style="margin-top:30px; opacity:0.4; background:none; border:none; color:inherit; cursor:pointer;">Sign Out</button>
   </div>
 
-  <div id="success-popup" class="overlay hidden">
-    <div class="popup-card">
-      <div style="font-size: 50px;">🎊</div>
-      <h2>Welcome to Hookly!</h2>
-      <p>We've added <strong>5 Free Tokens</strong> to your account.</p>
-      <button class="btn-primary" onclick="closePopup()">Start Creating</button>
-    </div>
-  </div>
-
   <script>
-    // INITIALIZE
-    const _supabase = supabase.createClient('https://fkngnzovfkaukphowsat.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8');
+    const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
+    const _supabase = supabase.createClient(SB_URL, SB_KEY);
     let currentUser = null;
 
-    // UI CONTROLS
     const showAuth = () => {
       document.getElementById('landing-page').classList.add('hidden');
       document.getElementById('auth-page').classList.remove('hidden');
     }
-    const closePopup = () => document.getElementById('success-popup').classList.add('hidden');
-    const triggerCelebration = () => confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff6ec7', '#8b5cf6'] });
 
-    // AUTH
+    const closePopup = () => {
+      const toast = document.getElementById('success-popup');
+      toast.style.animation = "slideIn 0.4s reverse forwards";
+      setTimeout(() => toast.classList.add('hidden'), 400);
+    }
+
+    const triggerCelebration = () => {
+      confetti({ particleCount: 100, spread: 70, origin: { x: 0.1, y: 0.2 }, colors: ['#ff6ec7', '#8b5cf6'] });
+    };
+
     async function signInWithGoogle() {
       await _supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin, skipNonceCheck: true }});
     }
 
     async function signInWithEmail() {
       const email = document.getElementById('emailInput').value;
-      if(!email) return alert("Enter email");
       const { error } = await _supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin }});
-      if (error) alert(error.message); else alert("Check your email!");
+      if (error) alert(error.message); else alert("Check email for link!");
     }
 
     async function signOut() { await _supabase.auth.signOut(); location.reload(); }
@@ -161,7 +173,6 @@
         document.getElementById('generator-ui').classList.remove('hidden');
         document.getElementById('token-badge-ui').classList.remove('hidden');
 
-        // Show welcome popup for new users
         const isNew = (new Date() - new Date(currentUser.created_at)) < 15000;
         if (isNew && !sessionStorage.getItem('notified')) {
           document.getElementById('success-popup').classList.remove('hidden');
@@ -177,17 +188,15 @@
       if (data) document.getElementById('tokenCount').textContent = data.tokens;
     }
 
-    // GENERATE
-    const generateBtn = document.getElementById('generateBtn');
-    generateBtn.addEventListener('click', async () => {
+    document.getElementById('generateBtn').addEventListener('click', async () => {
       const topic = document.getElementById('topic').value;
       if (!topic) return alert("Enter a topic!");
 
       generateBtn.disabled = true;
-      generateBtn.textContent = 'Hookly is thinking...';
+      generateBtn.textContent = 'Generating...';
 
       try {
-        const response = await fetch('/api/generate', {
+        const response = await fetch(window.location.origin + '/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -200,7 +209,7 @@
         if (response.ok) {
           fetchTokens();
           const resDiv = document.getElementById('result');
-          resDiv.innerHTML = '<h3>Your Hooks:</h3>';
+          resDiv.innerHTML = '<h3>Hooks:</h3>';
           data.hooks.forEach(h => {
             const div = document.createElement('div');
             div.className = 'hook-item';
@@ -209,14 +218,12 @@
           });
           resDiv.classList.remove('hidden');
         } else { alert(data.error); }
-      } catch (e) { alert("Connection Error"); }
+      } catch (e) { alert("Error connecting to server"); }
       finally { generateBtn.disabled = false; generateBtn.textContent = 'Generate Hooks (1 Token)'; }
     });
 
-    // Dark Mode Toggle
     document.getElementById('darkToggle').onclick = () => {
       document.body.classList.toggle('dark-mode');
-      document.getElementById('darkToggle').textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
     }
   </script>
 </body>
