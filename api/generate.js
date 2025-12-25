@@ -1,49 +1,37 @@
 export default async function handler(req, res) {
-  // 1. Only allow POST requests
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const { topic, platform, tone } = req.body;
+  const apiKey = process.env.GROQ_API_KEY;
 
-  // 2. Critical Check: Ensure the API key is actually there
-  if (!process.env.GROQ_API_KEY) {
-    return res.status(500).json({ error: "GROQ_API_KEY is missing in Vercel settings." });
-  }
+  if (!apiKey) return res.status(500).json({ error: "API Key missing in Vercel." });
 
   try {
-    const prompt = `Generate 5 viral hooks for a ${platform} video about ${topic} in a ${tone} tone. 
-    Format: One hook per line. No emojis. No numbers. Max 15 words. Make it easy to follow, and create the hooks to maximize engagement of the video. Use other viral videos and base it off that.`;
+    const prompt = `Generate 3 viral hooks for ${platform} about ${topic} (${tone} tone). One per line. No emojis.`;
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+        "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.8
+        temperature: 0.7
       })
     });
 
     const data = await response.json();
+    if (!response.ok) return res.status(response.status).json({ error: "Groq Error" });
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || "AI Provider Error" });
-    }
-
-    const text = data.choices[0].message.content;
-    const hooks = text
+    const hooks = data.choices[0].message.content
       .split("\n")
-      .map(line => line.replace(/^\d+[\.\)\-]\s*/, "").trim()) // Removes "1." or "2)" prefixes
-      .filter(line => line.length > 5); // Filters out empty lines
+      .map(h => h.replace(/^\d+[\.\)\-]\s*/, "").trim())
+      .filter(h => h.length > 5);
 
     return res.status(200).json({ hooks });
-
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Server Error" });
   }
 }
