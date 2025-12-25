@@ -9,25 +9,16 @@ export default async function handler(req, res) {
   if (!userId) return res.status(401).json({ error: "Please sign in" });
 
   try {
-    // 1. Check Tokens
     const { data: profile } = await supabase.from('profiles').select('tokens').eq('id', userId).single();
     if (!profile || profile.tokens <= 0) return res.status(403).json({ error: "No tokens left!" });
 
-    // 2. Groq AI Call
     const prompt = `Generate 3 viral, high-retention hooks for ${platform}. Topic: ${topic}. Tone: ${tone}. 
-    Rules: No emojis, no hashtags, plain text, one per line. Max 12 words per hook. Create it so that the user can experience more audience engagement in their videos. `;
+    Plain text, one per line. Max 12 words per hook.`;
 
     const aiRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: { 
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`, 
-        "Content-Type": "application/json" 
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.8
-      })
+      headers: { "Authorization": `Bearer ${process.env.GROQ_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
     });
 
     const aiData = await aiRes.json();
@@ -35,11 +26,7 @@ export default async function handler(req, res) {
       .map(h => h.replace(/^\d+[\.\)\-]\s*/, "").trim())
       .filter(h => h.length > 5);
 
-    // 3. Deduct Token
     await supabase.from('profiles').update({ tokens: profile.tokens - 1 }).eq('id', userId);
-
     return res.status(200).json({ hooks });
-  } catch (err) {
-    return res.status(500).json({ error: "Server crashed" });
-  }
+  } catch (err) { return res.status(500).json({ error: "Server error" }); }
 }
