@@ -1,107 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Hookly</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hookly | Viral AI Hooks</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0f172a; color: white; margin: 0; }
-        .view { display: none; min-height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; }
-        .view.active { display: flex !important; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        body { background-color: #020617; color: #f8fafc; font-family: sans-serif; }
+        .view { display: none; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; }
+        .view.active { display: flex; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
 
-    <section id="view-landing" class="view active px-6 text-center">
-        <h1 class="text-7xl font-black mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">HOOKLY</h1>
-        <button onclick="showView('view-login')" class="bg-blue-600 px-12 py-5 rounded-2xl font-bold text-xl transition hover:scale-105">
-            Start Creating Free →
+    <main id="view-landing" class="view active px-6 text-center">
+        <h1 class="text-7xl md:text-9xl font-black mb-6 tracking-tighter bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent">
+            HOOKLY
+        </h1>
+        <p class="text-slate-400 text-lg md:text-xl mb-10 max-w-md">
+            The simplest viral hook generator for creators.
+        </p>
+        <button onclick="nav('view-login')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-full transition-transform active:scale-95">
+            Get Started Free
         </button>
-    </section>
+    </main>
 
     <section id="view-login" class="view px-6">
-        <div class="glass p-10 rounded-3xl w-full max-w-md text-center">
-            <h2 class="text-3xl font-bold mb-6">Magic Login</h2>
-            <input type="email" id="login-email" placeholder="email@example.com" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl mb-4 text-white text-center outline-none">
-            <button onclick="handleLogin()" id="loginBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Send Magic Link</button>
-            <button onclick="showView('view-landing')" class="mt-6 text-slate-500 block w-full">← Back</button>
+        <div class="glass p-8 md:p-12 rounded-[2rem] w-full max-w-sm shadow-2xl">
+            <h2 class="text-3xl font-bold mb-2">Welcome Back</h2>
+            <p class="text-slate-400 mb-8">Login with your email.</p>
+            
+            <input type="email" id="email" placeholder="email@example.com" 
+                class="w-full bg-slate-900 border border-slate-800 p-4 rounded-xl mb-4 text-white outline-none focus:ring-2 focus:ring-blue-500">
+            
+            <button onclick="login()" id="login-btn" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-slate-200 transition">
+                Send Magic Link
+            </button>
+            
+            <button onclick="nav('view-landing')" class="w-full mt-6 text-slate-500 text-sm">Back to Home</button>
         </div>
     </section>
 
-    <section id="view-app" class="view px-6 pt-12 justify-start">
-        <div class="w-full max-w-2xl bg-slate-900 p-8 rounded-3xl border border-slate-800">
-            <textarea id="topic" placeholder="Video topic..." class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl h-32 mb-6 text-white outline-none"></textarea>
-            <button onclick="generate()" id="genBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Generate Hooks</button>
-            <div id="results" class="mt-10 space-y-4"></div>
-            <button onclick="handleLogout()" class="mt-8 text-slate-500 text-sm">Logout</button>
+    <section id="view-app" class="view px-6 justify-start pt-20">
+        <div class="w-full max-w-2xl">
+            <div class="flex justify-between items-center mb-8">
+                <span class="text-blue-500 font-bold tracking-widest text-sm">HOOKLY DASHBOARD</span>
+                <button onclick="logout()" class="text-slate-500 text-xs uppercase tracking-widest hover:text-red-500">Sign Out</button>
+            </div>
+
+            <div class="glass p-6 md:p-10 rounded-[2.5rem]">
+                <label class="block text-sm font-medium text-slate-400 mb-2">What is your video about?</label>
+                <textarea id="topic" class="w-full bg-slate-950 border border-slate-800 p-5 rounded-2xl h-40 mb-6 text-white outline-none focus:ring-2 focus:ring-blue-500 resize-none" 
+                    placeholder="e.g. A high-protein breakfast recipe for busy people..."></textarea>
+                
+                <button onclick="generate()" id="gen-btn" class="w-full bg-blue-600 py-5 rounded-2xl font-bold text-lg hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20">
+                    Generate Hooks
+                </button>
+            </div>
+
+            <div id="output" class="mt-8 space-y-4 pb-20">
+                </div>
         </div>
     </section>
 
     <script>
+        // --- SETTINGS ---
         const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
 
-        // Initialize Supabase
         const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-        // Simple Navigation
-        window.showView = function(viewId) {
+        // --- NAVIGATION ---
+        function nav(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-        };
+            document.getElementById(id).classList.add('active');
+        }
 
-        // Login Logic
-        window.handleLogin = async function() {
-            const email = document.getElementById('login-email').value;
-            if(!email) return alert("Enter email");
-            
-            document.getElementById('loginBtn').innerText = "Sending...";
+        // --- AUTH ---
+        async function login() {
+            const email = document.getElementById('email').value;
+            const btn = document.getElementById('login-btn');
+            if(!email) return alert("Please enter an email");
+
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+
             const { error } = await supabase.auth.signInWithOtp({ 
                 email, 
                 options: { emailRedirectTo: window.location.origin } 
             });
-            
+
             if (error) {
                 alert(error.message);
-                document.getElementById('loginBtn').innerText = "Send Magic Link";
+                btn.innerText = "Send Magic Link";
+                btn.disabled = false;
             } else {
-                alert("Link sent! Check your email.");
+                alert("Check your email for the login link!");
             }
-        };
+        }
 
-        window.handleLogout = async function() {
+        async function logout() {
             await supabase.auth.signOut();
-            location.reload();
-        };
+            window.location.reload();
+        }
 
-        window.generate = async function() {
+        // --- CORE LOGIC ---
+        async function generate() {
             const topic = document.getElementById('topic').value;
-            if(!topic) return alert("Enter a topic");
-            const { data: { user } } = await supabase.auth.getUser();
-            if(!user) return showView('view-login');
+            const btn = document.getElementById('gen-btn');
+            const output = document.getElementById('output');
 
-            document.getElementById('genBtn').innerText = "Generating...";
+            if(!topic) return alert("Tell us the topic!");
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if(!user) return nav('view-login');
+
+            btn.innerText = "Crafting Viral Hooks...";
+            btn.disabled = true;
+
             try {
-                const res = await fetch('/api/generate.mjs', {
+                const response = await fetch('/api/generate.mjs', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic, userId: user.id, platform: 'TikTok', tone: 'Viral' })
+                    body: JSON.stringify({ 
+                        topic: topic, 
+                        userId: user.id 
+                    })
                 });
-                const data = await res.json();
-                document.getElementById('results').innerHTML = data.hooks.map(h => `<div class="bg-slate-800 p-4 rounded-xl border-l-4 border-blue-500 text-left"><p>${h}</p></div>`).join('');
-            } catch (err) { alert("Error: " + err.message); }
-            document.getElementById('genBtn').innerText = "Generate Hooks";
-        };
 
-        // Check for session ONLY after everything is loaded
-        async function init() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) showView('view-app');
-        }
-        init();
-    </script>
-</body>
-</html>
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || "Failed to generate");
+
+                output.innerHTML = result.hooks.map(hook => `
+                    <div class="glass p-6 rounded-2xl border-l-4 border-blue-500
