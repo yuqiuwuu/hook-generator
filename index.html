@@ -131,8 +131,7 @@
             }
         }
 
-        // Attach handlers after DOM is ready — avoids relying on global function names + timing issues
-        document.addEventListener('DOMContentLoaded', () => {
+        function initHandlers() {
             const startBtn = document.getElementById('startBtn');
             const loginBtn = document.getElementById('loginBtn');
             const backBtn = document.getElementById('backBtn');
@@ -147,7 +146,14 @@
 
             // run init after handlers are wired
             init();
-        });
+        }
+
+        // If DOM is still loading, wait; otherwise wire handlers immediately.
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initHandlers);
+        } else {
+            initHandlers();
+        }
     </script>
 </body>
 </html>
