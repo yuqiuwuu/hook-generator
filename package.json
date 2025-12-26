@@ -1,7 +1,14 @@
 {
-  "name": "hookly",
-  "version": "1.0.0",
+  "name": "hook-generator",
+  "version": "0.1.0",
+  "description": "AI that can generate hooks for videos (server-side generation on Vercel)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.7"
+    "@sanity/client": "^4.1.0"
   }
 }
