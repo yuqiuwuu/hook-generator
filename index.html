@@ -75,85 +75,114 @@
         </div>
     </section>
 
-    <script>
-        // --- CONFIG ---
-        const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
+<script>
+    // --- DEBUGGING: Check if script starts ---
+    console.log("Script block loaded. Initializing...");
 
-        let supabase;
+    // --- CONFIG ---
+    // Make sure there are NO spaces inside the quotes
+    const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
 
-        try {
-            supabase = window.supabase.createClient(SB_URL, SB_KEY);
-        } catch (e) {
-            console.error("Supabase load error:", e);
+    let supabase;
+
+    // Initialize Supabase with a check
+    try {
+        if (SB_KEY.includes('REPLACE')) {
+            alert("STOP: You haven't replaced the SB_KEY yet!");
         }
+        supabase = window.supabase.createClient(SB_URL, SB_KEY);
+        console.log("Supabase Client created.");
+    } catch (e) {
+        console.error("CRITICAL ERROR: Supabase failed to initialize:", e);
+        alert("Supabase library failed to load. Check your internet or ad-blocker.");
+    }
 
-        window.handleLogin = async function() {
-            const email = document.getElementById('login-email').value;
-            const btn = document.getElementById('loginBtn');
-            if(!email) return alert("Enter email");
-            
-            btn.disabled = true; btn.innerText = "Sending...";
-            
+    // --- FUNCTIONS ---
+    window.handleLogin = async function() {
+        console.log("Login button clicked!"); // This should show in console
+        const email = document.getElementById('login-email').value;
+        const btn = document.getElementById('loginBtn');
+        
+        if(!email) {
+            alert("Please enter an email address.");
+            return;
+        }
+        
+        btn.disabled = true; 
+        btn.innerText = "Connecting...";
+        
+        try {
+            console.log("Attempting OTP for:", email);
             const { error } = await supabase.auth.signInWithOtp({ 
                 email, 
                 options: { emailRedirectTo: window.location.origin } 
             });
             
             if (error) {
-                alert(error.message);
-                btn.disabled = false; btn.innerText = "Send Magic Link";
+                console.error("Auth Error:", error);
+                alert("Auth Error: " + error.message);
+                btn.disabled = false; 
+                btn.innerText = "Send Magic Link";
             } else {
-                alert("Check your email for the magic link!");
+                console.log("Success! OTP Sent.");
+                alert("Success! Check your email for the magic link.");
                 btn.innerText = "Check Email!";
             }
-        };
-
-        window.handleLogout = async function() {
-            await supabase.auth.signOut();
-            location.reload();
-        };
-
-        window.generate = async function() {
-            const topic = document.getElementById('topic').value;
-            const btn = document.getElementById('genBtn');
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            if(!user) return showView('view-login');
-            if(!topic) return alert("Please enter a topic");
-
-            btn.disabled = true; btn.innerText = "Working...";
-            try {
-                const res = await fetch('/api/generate.mjs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        topic, 
-                        userId: user.id, 
-                        platform: document.getElementById('platform').value, 
-                        tone: document.getElementById('tone').value 
-                    })
-                });
-                const data = await res.json();
-                if(!res.ok) throw new Error(data.error);
-                
-                document.getElementById('results').innerHTML = data.hooks.map(h => 
-                    `<div class="glass p-6 rounded-2xl border-l-4 border-l-blue-500 animate-in fade-in slide-in-from-bottom-2 duration-500"><p>${h}</p></div>`
-                ).join('');
-            } catch (err) { alert(err.message); }
-            finally { btn.disabled = false; btn.innerText = "Generate Viral Hooks"; }
-        };
-
-        async function init() {
-            try {
-                // FIXED THE SYNTAX ERROR HERE (added missing await)
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) showView('view-app');
-            } catch (e) {
-                console.log("No user session found");
-            }
+        } catch (err) {
+            console.error("Global Error:", err);
+            alert("System Error: " + err.message);
+            btn.disabled = false;
         }
-        init();
-    </script>
+    };
+
+    window.handleLogout = async function() {
+        await supabase.auth.signOut();
+        location.reload();
+    };
+
+    window.generate = async function() {
+        const topic = document.getElementById('topic').value;
+        const btn = document.getElementById('genBtn');
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if(!user) return showView('view-login');
+        if(!topic) return alert("Please enter a topic");
+
+        btn.disabled = true; btn.innerText = "Working...";
+        try {
+            const res = await fetch('/api/generate.mjs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    topic, 
+                    userId: user.id, 
+                    platform: document.getElementById('platform').value, 
+                    tone: document.getElementById('tone').value 
+                })
+            });
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.error);
+            
+            document.getElementById('results').innerHTML = data.hooks.map(h => 
+                `<div class="glass p-6 rounded-2xl border-l-4 border-l-blue-500 mb-4"><p>${h}</p></div>`
+            ).join('');
+        } catch (err) { alert(err.message); }
+        finally { btn.disabled = false; btn.innerText = "Generate Viral Hooks"; }
+    };
+
+    async function init() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                console.log("Logged in user found:", user.email);
+                showView('view-app');
+            }
+        } catch (e) {
+            console.log("No active session.");
+        }
+    }
+    init();
+</script>
 </body>
 </html>
