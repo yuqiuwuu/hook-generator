@@ -7,21 +7,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0f172a; color: white; scroll-behavior: smooth; }
+        body { background-color: #0f172a; color: white; margin: 0; padding: 0; overflow-x: hidden; }
         .view { display: none; min-height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; }
+        /* Use !important to ensure the toggle always works */
         .view.active { display: flex !important; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
-
-    <script>
-      // Navigation Logic
-      window.showView = function(viewId) {
-        console.log("Switching to:", viewId);
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        const target = document.getElementById(viewId);
-        if (target) target.classList.add('active');
-      };
-    </script>
 </head>
 <body>
 
@@ -75,92 +66,101 @@
         </div>
     </section>
 
-<script>
-    // 1. CONFIG (Only define these once)
-    const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
-    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8'; // Ensure no spaces before or after the key
+    <script>
+        // 1. CONFIG
+        const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
 
-    // 2. INITIALIZE (Only declare 'supabase' once)
-    let supabase;
-    try {
-        supabase = window.supabase.createClient(SB_URL, SB_KEY);
-        console.log("Supabase connected successfully.");
-    } catch (e) {
-        console.error("Initialization error:", e);
-    }
+        // 2. INITIALIZE
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-    // 3. AUTH FUNCTIONS
-    window.handleLogin = async function() {
-        const email = document.getElementById('login-email').value;
-        const btn = document.getElementById('loginBtn');
-        
-        if(!email) return alert("Please enter your email");
-        
-        btn.disabled = true; 
-        btn.innerText = "Sending...";
-        
-        try {
-            const { error } = await supabase.auth.signInWithOtp({ 
-                email, 
-                options: { emailRedirectTo: window.location.origin } 
-            });
+        // 3. NAVIGATION (Define this globally)
+        window.showView = function(viewId) {
+            console.log("Navigating to:", viewId);
+            // Remove active class from ALL views
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            // Add active class to target view
+            const target = document.getElementById(viewId);
+            if (target) target.classList.add('active');
+        };
+
+        // 4. AUTH FUNCTIONS
+        window.handleLogin = async function() {
+            const email = document.getElementById('login-email').value;
+            const btn = document.getElementById('loginBtn');
+            if(!email) return alert("Please enter your email");
             
-            if (error) throw error;
-            alert("Check your email! A magic link has been sent.");
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Send Magic Link";
-        }
-    };
-
-    window.handleLogout = async function() {
-        await supabase.auth.signOut();
-        location.reload();
-    };
-
-    // 4. GENERATOR FUNCTION
-    window.generate = async function() {
-        const topic = document.getElementById('topic').value;
-        const btn = document.getElementById('genBtn');
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if(!user) return showView('view-login');
-        if(!topic) return alert("Please enter a topic");
-
-        btn.disabled = true; btn.innerText = "Generating...";
-        try {
-            const res = await fetch('/api/generate.mjs', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    topic, 
-                    userId: user.id, 
-                    platform: document.getElementById('platform').value, 
-                    tone: document.getElementById('tone').value 
-                })
-            });
-            const data = await res.json();
-            if(!res.ok) throw new Error(data.error);
+            btn.disabled = true; 
+            btn.innerText = "Sending Link...";
             
-            document.getElementById('results').innerHTML = data.hooks.map(h => 
-                `<div class="glass p-6 rounded-2xl border-l-4 border-l-blue-500 mb-4 text-left"><p>${h}</p></div>`
-            ).join('');
-        } catch (err) { alert(err.message); }
-        finally { btn.disabled = false; btn.innerText = "Generate Viral Hooks"; }
-    };
+            try {
+                const { error } = await supabase.auth.signInWithOtp({ 
+                    email, 
+                    options: { emailRedirectTo: window.location.origin } 
+                });
+                if (error) throw error;
+                alert("Success! Check your email inbox for the link.");
+            } catch (err) {
+                alert("Login Error: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Send Magic Link";
+            }
+        };
 
-    // 5. STARTUP LOGIC
-    async function init() {
-        try {
+        window.handleLogout = async function() {
+            await supabase.auth.signOut();
+            location.reload();
+        };
+
+        // 5. GENERATOR FUNCTION
+        window.generate = async function() {
+            const topic = document.getElementById('topic').value;
+            const btn = document.getElementById('genBtn');
             const { data: { user } } = await supabase.auth.getUser();
-            if (user) showView('view-app');
-        } catch (e) {
-            console.log("Session check: No user logged in.");
+            
+            if(!user) return showView('view-login');
+            if(!topic) return alert("Please enter a topic");
+
+            btn.disabled = true; btn.innerText = "Generating...";
+            try {
+                const res = await fetch('/api/generate.mjs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        topic, 
+                        userId: user.id, 
+                        platform: document.getElementById('platform').value, 
+                        tone: document.getElementById('tone').value 
+                    })
+                });
+                const data = await res.json();
+                if(!res.ok) throw new Error(data.error);
+                
+                document.getElementById('results').innerHTML = data.hooks.map(h => 
+                    `<div class="glass p-6 rounded-2xl border-l-4 border-l-blue-500 mb-4 text-left shadow-lg"><p class="text-white">${h}</p></div>`
+                ).join('');
+            } catch (err) { 
+                alert("API Error: " + err.message); 
+            } finally { 
+                btn.disabled = false; btn.innerText = "Generate Viral Hooks"; 
+            }
+        };
+
+        // 6. STARTUP LOGIC
+        async function init() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    showView('view-app');
+                } else {
+                    showView('view-landing');
+                }
+            } catch (e) {
+                showView('view-landing');
+            }
         }
-    }
-    init();
-</script>
+        init();
+    </script>
 </body>
 </html>
