@@ -4,37 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hookly</title>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <script>
-        // We define 'nav' on the window immediately so it's impossible to be "undefined"
-        window.nav = function(id) {
-            console.log("Attempting to show view:", id);
-            
-            // Get all views
-            const views = document.querySelectorAll('.view');
-            
-            // Hide everything
-            views.forEach(v => {
-                v.style.setProperty('display', 'none', 'important');
-            });
-            
-            // Show the target
-            const target = document.getElementById(id);
-            if (target) {
-                target.style.setProperty('display', 'flex', 'important');
-            } else {
-                console.error("View ID not found:", id);
-            }
-        };
-    </script>
-
     <style>
         body { background-color: #020617; color: white; margin: 0; }
         .view { min-height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; display: none; }
-        /* Landing visible by default until JS takes over */
         #view-landing { display: flex; } 
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
@@ -43,77 +17,79 @@
 
     <section id="view-landing" class="view px-6 text-center">
         <h1 class="text-7xl font-black mb-6 bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent">HOOKLY</h1>
-        <button onclick="nav('view-login')" class="bg-blue-600 px-10 py-4 rounded-full font-bold text-lg hover:bg-blue-500 transition">
-            Get Started Free →
-        </button>
+        <button onclick="nav('view-login')" class="bg-blue-600 px-10 py-4 rounded-full font-bold text-lg">Get Started Free →</button>
     </section>
 
     <section id="view-login" class="view px-6">
         <div class="glass p-10 rounded-3xl w-full max-w-sm text-center">
             <h2 class="text-2xl font-bold mb-6">Login</h2>
-            <input type="email" id="email" placeholder="email@example.com" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-xl mb-4 text-white outline-none focus:border-blue-500">
-            <button onclick="login()" id="login-btn" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-slate-200">Send Magic Link</button>
-            <button onclick="nav('view-landing')" class="mt-6 text-slate-500 block w-full text-sm">Back to Home</button>
+            <input type="email" id="email-input" placeholder="email@example.com" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-xl mb-4 text-white outline-none">
+            <button onclick="handleLogin()" id="login-btn" class="w-full bg-white text-black font-bold py-4 rounded-xl">Send Magic Link</button>
+            <button onclick="nav('view-landing')" class="mt-6 text-slate-500 block w-full text-sm">Back</button>
         </div>
     </section>
 
     <section id="view-app" class="view px-6 pt-10 justify-start">
         <div class="w-full max-w-xl">
-            <div class="glass p-8 rounded-3xl mb-6">
-                <textarea id="topic" placeholder="Video topic..." class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl h-32 mb-4 text-white outline-none focus:border-blue-500"></textarea>
-                <button onclick="generate()" id="gen-btn" class="w-full bg-blue-600 py-4 rounded-xl font-bold hover:bg-blue-500">Generate Hooks</button>
+            <div class="glass p-8 rounded-3xl">
+                <textarea id="topic" placeholder="Video topic..." class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl h-32 mb-4 text-white outline-none"></textarea>
+                <button onclick="generate()" id="gen-btn" class="w-full bg-blue-600 py-4 rounded-xl font-bold">Generate Hooks</button>
             </div>
-            <div id="output" class="space-y-4"></div>
-            <button onclick="logout()" class="mt-10 text-slate-500 w-full text-sm">Logout</button>
+            <div id="output" class="mt-6 space-y-4"></div>
         </div>
     </section>
 
     <script>
+        // --- 1. CONFIG & INIT ---
         const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
 
-        let supabase;
-        try {
-            supabase = window.supabase.createClient(SB_URL, SB_KEY);
-        } catch (e) {
-            console.error("Supabase load error:", e);
-        }
+        // Declare supabase ONLY ONCE in the whole file
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-        window.login = async function() {
-            const email = document.getElementById('email').value;
+        // --- 2. NAVIGATION ---
+        window.nav = function(id) {
+            document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+            const target = document.getElementById(id);
+            if (target) target.style.display = 'flex';
+        };
+
+        // --- 3. LOGIN ---
+        window.handleLogin = async function() {
+            const email = document.getElementById('email-input').value;
             const btn = document.getElementById('login-btn');
-            if(!email) return alert("Enter email");
-            
-            btn.innerText = "Sending...";
-            btn.disabled = true;
 
-            const { error } = await supabase.auth.signInWithOtp({ 
-                email, 
-                options: { emailRedirectTo: window.location.origin } 
-            });
+            if (!email) {
+                alert("Please enter an email");
+                return;
+            }
 
-            if (error) {
-                alert(error.message);
+            try {
+                btn.innerText = "Sending...";
+                btn.disabled = true;
+
+                const { error } = await supabase.auth.signInWithOtp({
+                    email: email,
+                    options: { emailRedirectTo: window.location.origin }
+                });
+
+                if (error) throw error;
+                alert("Magic link sent! Check your inbox.");
+            } catch (err) {
+                alert("Error: " + err.message);
+            } finally {
                 btn.innerText = "Send Magic Link";
                 btn.disabled = false;
-            } else {
-                alert("Link sent! Check your inbox.");
             }
         };
 
-        window.logout = async function() {
-            await supabase.auth.signOut();
-            window.location.reload();
-        };
-
+        // --- 4. GENERATE ---
         window.generate = async function() {
             const topic = document.getElementById('topic').value;
             const btn = document.getElementById('gen-btn');
             if(!topic) return alert("Enter a topic");
 
             btn.innerText = "Generating...";
-            btn.disabled = true;
-
             try {
                 const res = await fetch('/api/generate.mjs', {
                     method: 'POST',
@@ -121,32 +97,22 @@
                     body: JSON.stringify({ topic })
                 });
                 const data = await res.json();
-                
-                if (data.hooks) {
-                    document.getElementById('output').innerHTML = data.hooks.map(h => `
-                        <div class="glass p-5 rounded-2xl border-l-4 border-blue-600 text-left">
-                            <p class="text-white">${h}</p>
-                        </div>
-                    `).join('');
-                } else {
-                    throw new Error("No hooks returned");
-                }
-            } catch (e) {
-                alert("Error: " + e.message);
+                document.getElementById('output').innerHTML = data.hooks.map(h => `
+                    <div class="glass p-4 rounded-xl border-l-4 border-blue-600 text-left shadow-lg"><p>${h}</p></div>
+                `).join('');
+            } catch (e) { 
+                alert("Error: " + e.message); 
             } finally {
                 btn.innerText = "Generate Hooks";
-                btn.disabled = false;
             }
         };
 
-        // Check for session
-        async function check() {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) nav('view-app');
-            } catch (e) {}
+        // --- 5. INITIAL SESSION CHECK ---
+        async function checkSession() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) nav('view-app');
         }
-        check();
+        checkSession();
     </script>
 </body>
 </html>
