@@ -6,11 +6,9 @@
   <title>Hook Generator</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23007acc'/%3E%3Ctext x='50' y='57' font-size='50' text-anchor='middle' fill='white' font-family='Arial'%3EH%3C/text%3E%3C/svg%3E">
   <style>
-    :root { --bg:#f7fafc; --muted:#667085; --panel:#fff; --border:#e2e8f0; --accent:#0ea5e9; }
-    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:var(--bg); color:#0f172a; padding:24px; }
-    header { display:flex; align-items:center; gap:1rem; margin-bottom:16px; }
-    h1 { margin:0; font-size:1.1rem; }
-    .panel { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; max-width:760px; }
+    :root { --bg:#f7fafc; --muted:#667085; --panel:#fff; --border:#e2e8f0; }
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:0; background:var(--bg); color:#0f172a; padding:24px; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; max-width:760px; margin:0 auto; }
     label { display:block; margin-bottom:8px; font-weight:600; }
     input[type="text"] { width:100%; padding:10px; border-radius:6px; border:1px solid var(--border); margin-bottom:12px; }
     .controls { display:flex; gap:8px; }
@@ -20,94 +18,73 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1>Hook Generator</h1>
-  </header>
+  <main class="panel" aria-labelledby="heading">
+    <h1 id="heading">Hook Generator (GROQ)</h1>
+    <p>Enter a topic. This will query your Sanity dataset (GROQ) and return stored hooks for the topic if found; otherwise a fallback list is returned.</p>
 
-  <main>
-    <section class="panel" aria-labelledby="generate-heading">
-      <h2 id="generate-heading">Generate Hooks</h2>
-      <p>Enter a topic and click Generate. This will POST to <code>/api/generate</code> (serverless function).</p>
+    <label for="topic">Topic</label>
+    <input id="topic" type="text" placeholder="e.g. productivity tips for students">
 
-      <label for="topic">Topic</label>
-      <input id="topic" type="text" placeholder="e.g. productivity tips for students">
+    <div class="controls">
+      <button id="generateBtn">Generate (GROQ)</button>
+      <button id="clearBtn">Clear</button>
+    </div>
 
-      <div class="controls">
-        <button id="generateBtn">Generate</button>
-        <button id="clearBtn">Clear</button>
-      </div>
+    <h3 style="margin-top:12px;">Result</h3>
+    <pre id="result">No result yet.</pre>
 
-      <h3 style="margin-top:12px;">Result</h3>
-      <pre id="result">No result yet.</pre>
-
-      <footer>
-        Note: generation happens server-side. Make sure your Vercel env vars (SANITY_*, OPENAI_API_KEY) are set if you expect OpenAI or Sanity integration.
-      </footer>
-    </section>
+    <footer>
+      Make sure SANITY_PROJECT_ID and SANITY_DATASET are set in your Vercel environment. SANITY_API_TOKEN is optional for read-only public datasets.
+    </footer>
   </main>
 
   <script>
-    // Safe, simple client-side logic: attach listeners after DOM loaded
     document.addEventListener('DOMContentLoaded', () => {
       const topicEl = document.getElementById('topic')
       const generateBtn = document.getElementById('generateBtn')
       const clearBtn = document.getElementById('clearBtn')
       const resultEl = document.getElementById('result')
 
-      function showMessage(msg) {
-        resultEl.textContent = msg
-      }
+      function showMessage(msg) { resultEl.textContent = msg }
 
-      generateBtn.addEventListener('click', async () => {
-        const topic = (topicEl.value || '').trim()
-        if (!topic) {
-          showMessage('Please enter a topic first.')
-          return
-        }
-
-        showMessage('Generating...')
-
+      async function generate(topic) {
+        showMessage('Querying Sanity (GROQ)...')
         try {
           const resp = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ topic })
           })
-
           const body = await resp.json()
-
           if (!resp.ok) {
             console.error('API error:', body)
             showMessage(body?.error || 'Generation failed — check console.')
             return
           }
-
-          // body.result expected to be an array of hooks (strings) or a single string
           const hooks = Array.isArray(body.result) ? body.result : [String(body.result || '')]
-          if (!hooks.length || (hooks.length === 1 && !hooks[0].trim())) {
-            showMessage('No hooks returned.')
-            return
-          }
-
-          // Display numbered list
-          showMessage(hooks.map((h, i) => `${i + 1}. ${h}`).join('\n\n'))
+          showMessage(hooks.length ? hooks.map((h,i) => `${i+1}. ${h}`).join('\n\n') : 'No hooks returned.')
         } catch (err) {
           console.error('Request failed:', err)
           showMessage('Request failed — see console.')
         }
+      }
+
+      generateBtn.addEventListener('click', () => {
+        const topic = (topicEl.value || '').trim()
+        if (!topic) {
+          showMessage('Please enter a topic first.')
+          return
+        }
+        generate(topic)
       })
 
       clearBtn.addEventListener('click', () => {
         topicEl.value = ''
-        resultEl.textContent = 'No result yet.'
+        showMessage('No result yet.')
       })
 
-      // Allow Enter to submit when typing in the text field
       topicEl.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault()
-          generateBtn.click()
-        }
+        if (e.key === 'Enter') { e.preventDefault(); generateBtn.click() }
       })
     })
   </script>
