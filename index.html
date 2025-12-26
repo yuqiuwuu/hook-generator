@@ -13,9 +13,8 @@
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 
-    <!-- Define showView early so inline onclick handlers can access it -->
+    <!-- Define showView early so other code (and any inline uses) can access it reliably -->
     <script>
-      // Expose as a global on window so inline onclick="showView(...)" works reliably
       window.showView = function(viewId) {
         console.log("Switching to:", viewId);
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -34,7 +33,7 @@
             <p class="text-xl md:text-2xl text-slate-400 mb-10">
                 Stop struggling with captions. Generate viral hooks for TikTok, Reels, and X in one click.
             </p>
-            <button onclick="showView('view-login')" class="bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold px-12 py-5 rounded-2xl shadow-2xl shadow-blue-500/20 transition-all">
+            <button id="startBtn" class="bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold px-12 py-5 rounded-2xl shadow-2xl shadow-blue-500/20 transition-all">
                 Start Creating Free →
             </button>
         </div>
@@ -45,10 +44,10 @@
             <h2 class="text-3xl font-bold mb-2 text-center">Magic Login</h2>
             <p class="text-slate-400 mb-8 text-center">Enter your email and we'll send a login link.</p>
             <input type="email" id="login-email" placeholder="name@email.com" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl mb-4 text-white text-center focus:border-blue-500 outline-none">
-            <button onclick="handleLogin()" id="loginBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg hover:bg-blue-500 transition">
+            <button id="loginBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg hover:bg-blue-500 transition">
                 Send Magic Link
             </button>
-            <button onclick="showView('view-landing')" class="w-full mt-6 text-slate-500 hover:text-white transition">← Back to Home</button>
+            <button id="backBtn" class="w-full mt-6 text-slate-500 hover:text-white transition">← Back to Home</button>
         </div>
     </section>
 
@@ -56,7 +55,7 @@
         <div class="w-full max-w-2xl">
             <div class="flex justify-between items-center mb-10">
                 <h2 class="text-2xl font-bold text-blue-400">Hookly Dashboard</h2>
-                <button onclick="handleLogout()" class="text-slate-500 hover:text-red-400">Logout</button>
+                <button id="logoutBtn" class="text-slate-500 hover:text-red-400">Logout</button>
             </div>
             <div class="glass p-8 rounded-3xl shadow-2xl">
                 <textarea id="topic" placeholder="Video topic..." class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl h-32 mb-6 text-white outline-none focus:border-blue-500 transition"></textarea>
@@ -70,7 +69,7 @@
                         <option>Aggressive</option>
                     </select>
                 </div>
-                <button onclick="generate()" id="genBtn" class="w-full bg-blue-600 p-5 rounded-2xl font-bold text-xl hover:bg-blue-500">Generate Viral Hooks</button>
+                <button id="genBtn" class="w-full bg-blue-600 p-5 rounded-2xl font-bold text-xl hover:bg-blue-500">Generate Viral Hooks</button>
             </div>
             <div id="results" class="mt-10 space-y-4"></div>
         </div>
@@ -83,8 +82,6 @@
         const SB_KEY = 'REPLACE_WITH_YOUR_SUPABASE_ANON_KEY';
 
         let supabase;
-
-        // (removed duplicate showView here because it's already defined in the head)
 
         // Initialize Supabase
         try {
@@ -126,10 +123,31 @@
         }
 
         async function init() {
-            const { data: { user } } await supabase.auth.getUser();
-            if (user) showView('view-app');
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) showView('view-app');
+            } catch (err) {
+                console.error("init error:", err);
+            }
         }
-        init();
+
+        // Attach handlers after DOM is ready — avoids relying on global function names + timing issues
+        document.addEventListener('DOMContentLoaded', () => {
+            const startBtn = document.getElementById('startBtn');
+            const loginBtn = document.getElementById('loginBtn');
+            const backBtn = document.getElementById('backBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const genBtn = document.getElementById('genBtn');
+
+            if (startBtn) startBtn.addEventListener('click', () => showView('view-login'));
+            if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+            if (backBtn) backBtn.addEventListener('click', () => showView('view-landing'));
+            if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+            if (genBtn) genBtn.addEventListener('click', generate);
+
+            // run init after handlers are wired
+            init();
+        });
     </script>
 </body>
 </html>
