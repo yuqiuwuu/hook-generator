@@ -1,137 +1,115 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hookly</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <style>
-        body { background-color: #020617; color: white; margin: 0; font-family: sans-serif; }
-        /* Views are hidden by default */
-        .view { min-height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; display: none; }
-        /* Only the landing view is visible on load */
-        #view-landing { display: flex; } 
-        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hook Generator</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23007acc'/%3E%3Ctext x='50' y='57' font-size='50' text-anchor='middle' fill='white' font-family='Arial'%3EH%3C/text%3E%3C/svg%3E">
+  <style>
+    :root { --bg:#f7fafc; --muted:#667085; --panel:#fff; --border:#e2e8f0; --accent:#0ea5e9; }
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:var(--bg); color:#0f172a; padding:24px; }
+    header { display:flex; align-items:center; gap:1rem; margin-bottom:16px; }
+    h1 { margin:0; font-size:1.1rem; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; max-width:760px; }
+    label { display:block; margin-bottom:8px; font-weight:600; }
+    input[type="text"] { width:100%; padding:10px; border-radius:6px; border:1px solid var(--border); margin-bottom:12px; }
+    .controls { display:flex; gap:8px; }
+    button { padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:white; cursor:pointer; }
+    pre { white-space:pre-wrap; background:#0b1220; color:#dbeafe; padding:12px; border-radius:6px; margin-top:12px; }
+    footer { margin-top:12px; color:var(--muted); font-size:13px; }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>Hook Generator</h1>
+  </header>
 
-    <section id="view-landing" class="view px-6 text-center">
-        <h1 class="text-7xl font-black mb-6 bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent">HOOKLY</h1>
-        <button onclick="nav('view-login')" class="bg-blue-600 px-10 py-4 rounded-full font-bold text-lg hover:bg-blue-500 transition-all">
-            Get Started Free →
-        </button>
+  <main>
+    <section class="panel" aria-labelledby="generate-heading">
+      <h2 id="generate-heading">Generate Hooks</h2>
+      <p>Enter a topic and click Generate. This will POST to <code>/api/generate</code> (serverless function).</p>
+
+      <label for="topic">Topic</label>
+      <input id="topic" type="text" placeholder="e.g. productivity tips for students">
+
+      <div class="controls">
+        <button id="generateBtn">Generate</button>
+        <button id="clearBtn">Clear</button>
+      </div>
+
+      <h3 style="margin-top:12px;">Result</h3>
+      <pre id="result">No result yet.</pre>
+
+      <footer>
+        Note: generation happens server-side. Make sure your Vercel env vars (SANITY_*, OPENAI_API_KEY) are set if you expect OpenAI or Sanity integration.
+      </footer>
     </section>
+  </main>
 
-    <section id="view-login" class="view px-6">
-        <div class="glass p-10 rounded-3xl w-full max-w-sm text-center">
-            <h2 class="text-2xl font-bold mb-6">Login</h2>
-            <input type="email" id="email-input" placeholder="email@example.com" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-xl mb-4 text-white outline-none focus:border-blue-500">
-            <button onclick="handleLogin()" id="login-btn" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-slate-200">
-                Send Magic Link
-            </button>
-            <button onclick="nav('view-landing')" class="mt-6 text-slate-500 block w-full text-sm">Back to Home</button>
-        </div>
-    </section>
+  <script>
+    // Safe, simple client-side logic: attach listeners after DOM loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      const topicEl = document.getElementById('topic')
+      const generateBtn = document.getElementById('generateBtn')
+      const clearBtn = document.getElementById('clearBtn')
+      const resultEl = document.getElementById('result')
 
-    <section id="view-app" class="view px-6 pt-10 justify-start">
-        <div class="w-full max-w-xl">
-            <div class="glass p-8 rounded-3xl mb-6">
-                <textarea id="topic" placeholder="Video topic..." class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl h-32 mb-4 text-white outline-none focus:border-blue-500"></textarea>
-                <button onclick="generate()" id="gen-btn" class="w-full bg-blue-600 py-4 rounded-xl font-bold">Generate Hooks</button>
-            </div>
-            <div id="output" class="space-y-4 pb-10"></div>
-        </div>
-    </section>
+      function showMessage(msg) {
+        resultEl.textContent = msg
+      }
 
-    <script>
-        // 1. Navigation logic - must be first
-        window.nav = function(viewId) {
-            console.log("Navigating to:", viewId);
-            // Hide all sections
-            document.querySelectorAll('.view').forEach(section => {
-                section.style.display = 'none';
-            });
-            // Show target section
-            const target = document.getElementById(viewId);
-            if (target) {
-                target.style.display = 'flex';
-            }
-        };
+      generateBtn.addEventListener('click', async () => {
+        const topic = (topicEl.value || '').trim()
+        if (!topic) {
+          showMessage('Please enter a topic first.')
+          return
+        }
 
-        // 2. Supabase Configuration
-        const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
+        showMessage('Generating...')
 
-        // 3. Initialize Supabase
-        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+        try {
+          const resp = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ topic })
+          })
 
-        // 4. Auth Logic
-        window.handleLogin = async function() {
-            const email = document.getElementById('email-input').value;
-            const btn = document.getElementById('login-btn');
-            
-            if (!email) return alert("Please enter an email");
-            
-            btn.innerText = "Sending...";
-            btn.disabled = true;
+          const body = await resp.json()
 
-            try {
-                const { error } = await supabase.auth.signInWithOtp({
-                    email: email,
-                    options: { emailRedirectTo: window.location.origin }
-                });
+          if (!resp.ok) {
+            console.error('API error:', body)
+            showMessage(body?.error || 'Generation failed — check console.')
+            return
+          }
 
-                if (error) throw error;
-                alert("Magic link sent! Check your inbox.");
-            } catch (err) {
-                alert("Error: " + err.message);
-            } finally {
-                btn.innerText = "Send Magic Link";
-                btn.disabled = false;
-            }
-        };
+          // body.result expected to be an array of hooks (strings) or a single string
+          const hooks = Array.isArray(body.result) ? body.result : [String(body.result || '')]
+          if (!hooks.length || (hooks.length === 1 && !hooks[0].trim())) {
+            showMessage('No hooks returned.')
+            return
+          }
 
-        // 5. Hook Generation Logic
-        window.generate = async function() {
-            const topic = document.getElementById('topic').value;
-            const btn = document.getElementById('gen-btn');
-            if(!topic) return alert("Enter a topic first!");
+          // Display numbered list
+          showMessage(hooks.map((h, i) => `${i + 1}. ${h}`).join('\n\n'))
+        } catch (err) {
+          console.error('Request failed:', err)
+          showMessage('Request failed — see console.')
+        }
+      })
 
-            btn.innerText = "Generating...";
-            btn.disabled = true;
+      clearBtn.addEventListener('click', () => {
+        topicEl.value = ''
+        resultEl.textContent = 'No result yet.'
+      })
 
-            try {
-                const res = await fetch('/api/generate.mjs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic })
-                });
-                const data = await res.json();
-                
-                if (data.hooks) {
-                    document.getElementById('output').innerHTML = data.hooks.map(h => `
-                        <div class="glass p-5 rounded-2xl border-l-4 border-blue-600 text-left">
-                            <p class="text-white">${h}</p>
-                        </div>
-                    `).join('');
-                }
-            } catch (e) {
-                alert("API Error: " + e.message);
-            } finally {
-                btn.innerText = "Generate Hooks";
-                btn.disabled = false;
-            }
-        };
-
-        // 6. Startup - Check if user is already logged in
-        (async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) nav('view-app');
-        })();
-    </script>
+      // Allow Enter to submit when typing in the text field
+      topicEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          generateBtn.click()
+        }
+      })
+    })
+  </script>
 </body>
 </html>
