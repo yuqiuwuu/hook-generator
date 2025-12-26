@@ -19,14 +19,14 @@
 </head>
 <body>
   <main class="panel" aria-labelledby="heading">
-    <h1 id="heading">Hook Generator (GROQ)</h1>
-    <p>Enter a topic. This will query your Sanity dataset (GROQ) and return stored hooks for the topic if found; otherwise a fallback list is returned.</p>
+    <h1 id="heading">Hook Generator (Supabase)</h1>
+    <p>Enter a topic. The server will query your Supabase <code>hooks</code> table for matching hooks; if none exist a deterministic fallback is returned (and optionally saved server-side).</p>
 
     <label for="topic">Topic</label>
     <input id="topic" type="text" placeholder="e.g. productivity tips for students">
 
     <div class="controls">
-      <button id="generateBtn">Generate (GROQ)</button>
+      <button id="generateBtn">Generate</button>
       <button id="clearBtn">Clear</button>
     </div>
 
@@ -34,7 +34,7 @@
     <pre id="result">No result yet.</pre>
 
     <footer>
-      Make sure SANITY_PROJECT_ID and SANITY_DATASET are set in your Vercel environment. SANITY_API_TOKEN is optional for read-only public datasets.
+      Make sure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY for read-only) are set in Vercel environment variables.
     </footer>
   </main>
 
@@ -48,7 +48,7 @@
       function showMessage(msg) { resultEl.textContent = msg }
 
       async function generate(topic) {
-        showMessage('Querying Sanity (GROQ)...')
+        showMessage('Querying Supabase...')
         try {
           const resp = await fetch('/api/generate', {
             method: 'POST',
