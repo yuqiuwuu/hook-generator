@@ -76,63 +76,42 @@
     </section>
 
 <script>
-    // --- DEBUGGING: Check if script starts ---
-    console.log("Script block loaded. Initializing...");
-
-    // --- CONFIG ---
-    // Make sure there are NO spaces inside the quotes
+    // 1. CONFIG (Only define these once)
     const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
-    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbmduem92ZmthdWtwaG93c2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NzI3MzMsImV4cCI6MjA4MjI0ODczM30.uv53ISUWFwj5PDK0FXTB1w0KJCKoBB7xyaKr0pX6vQ8'; // Ensure no spaces before or after the key
 
+    // 2. INITIALIZE (Only declare 'supabase' once)
     let supabase;
-
-    // Initialize Supabase with a check
     try {
-        if (SB_KEY.includes('REPLACE')) {
-            alert("STOP: You haven't replaced the SB_KEY yet!");
-        }
         supabase = window.supabase.createClient(SB_URL, SB_KEY);
-        console.log("Supabase Client created.");
+        console.log("Supabase connected successfully.");
     } catch (e) {
-        console.error("CRITICAL ERROR: Supabase failed to initialize:", e);
-        alert("Supabase library failed to load. Check your internet or ad-blocker.");
+        console.error("Initialization error:", e);
     }
 
-    // --- FUNCTIONS ---
+    // 3. AUTH FUNCTIONS
     window.handleLogin = async function() {
-        console.log("Login button clicked!"); // This should show in console
         const email = document.getElementById('login-email').value;
         const btn = document.getElementById('loginBtn');
         
-        if(!email) {
-            alert("Please enter an email address.");
-            return;
-        }
+        if(!email) return alert("Please enter your email");
         
         btn.disabled = true; 
-        btn.innerText = "Connecting...";
+        btn.innerText = "Sending...";
         
         try {
-            console.log("Attempting OTP for:", email);
             const { error } = await supabase.auth.signInWithOtp({ 
                 email, 
                 options: { emailRedirectTo: window.location.origin } 
             });
             
-            if (error) {
-                console.error("Auth Error:", error);
-                alert("Auth Error: " + error.message);
-                btn.disabled = false; 
-                btn.innerText = "Send Magic Link";
-            } else {
-                console.log("Success! OTP Sent.");
-                alert("Success! Check your email for the magic link.");
-                btn.innerText = "Check Email!";
-            }
+            if (error) throw error;
+            alert("Check your email! A magic link has been sent.");
         } catch (err) {
-            console.error("Global Error:", err);
-            alert("System Error: " + err.message);
+            alert("Error: " + err.message);
+        } finally {
             btn.disabled = false;
+            btn.innerText = "Send Magic Link";
         }
     };
 
@@ -141,6 +120,7 @@
         location.reload();
     };
 
+    // 4. GENERATOR FUNCTION
     window.generate = async function() {
         const topic = document.getElementById('topic').value;
         const btn = document.getElementById('genBtn');
@@ -149,7 +129,7 @@
         if(!user) return showView('view-login');
         if(!topic) return alert("Please enter a topic");
 
-        btn.disabled = true; btn.innerText = "Working...";
+        btn.disabled = true; btn.innerText = "Generating...";
         try {
             const res = await fetch('/api/generate.mjs', {
                 method: 'POST',
@@ -165,21 +145,19 @@
             if(!res.ok) throw new Error(data.error);
             
             document.getElementById('results').innerHTML = data.hooks.map(h => 
-                `<div class="glass p-6 rounded-2xl border-l-4 border-l-blue-500 mb-4"><p>${h}</p></div>`
+                `<div class="glass p-6 rounded-2xl border-l-4 border-l-blue-500 mb-4 text-left"><p>${h}</p></div>`
             ).join('');
         } catch (err) { alert(err.message); }
         finally { btn.disabled = false; btn.innerText = "Generate Viral Hooks"; }
     };
 
+    // 5. STARTUP LOGIC
     async function init() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                console.log("Logged in user found:", user.email);
-                showView('view-app');
-            }
+            if (user) showView('view-app');
         } catch (e) {
-            console.log("No active session.");
+            console.log("Session check: No user logged in.");
         }
     }
     init();
