@@ -9,12 +9,12 @@
     <style>
         body { background-color: #0f172a; color: white; scroll-behavior: smooth; }
         .view { display: none; min-height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; }
-        .view.active { display: flex; }
+        .view.active { display: flex !important; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 
-    <!-- Define showView early so other code (and any inline uses) can access it reliably -->
     <script>
+      // Navigation Logic
       window.showView = function(viewId) {
         console.log("Switching to:", viewId);
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -33,21 +33,21 @@
             <p class="text-xl md:text-2xl text-slate-400 mb-10">
                 Stop struggling with captions. Generate viral hooks for TikTok, Reels, and X in one click.
             </p>
-            <button id="startBtn" class="bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold px-12 py-5 rounded-2xl shadow-2xl shadow-blue-500/20 transition-all">
+            <button onclick="showView('view-login')" class="bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold px-12 py-5 rounded-2xl shadow-2xl shadow-blue-500/20 transition-all">
                 Start Creating Free →
             </button>
         </div>
     </section>
 
     <section id="view-login" class="view px-6">
-        <div class="glass p-10 rounded-3xl w-full max-w-md shadow-2xl">
-            <h2 class="text-3xl font-bold mb-2 text-center">Magic Login</h2>
-            <p class="text-slate-400 mb-8 text-center">Enter your email and we'll send a login link.</p>
+        <div class="glass p-10 rounded-3xl w-full max-w-md shadow-2xl text-center">
+            <h2 class="text-3xl font-bold mb-2">Magic Login</h2>
+            <p class="text-slate-400 mb-8">Enter your email and we'll send a login link.</p>
             <input type="email" id="login-email" placeholder="name@email.com" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl mb-4 text-white text-center focus:border-blue-500 outline-none">
-            <button id="loginBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg hover:bg-blue-500 transition">
+            <button onclick="handleLogin()" id="loginBtn" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg hover:bg-blue-500 transition">
                 Send Magic Link
             </button>
-            <button id="backBtn" class="w-full mt-6 text-slate-500 hover:text-white transition">← Back to Home</button>
+            <button onclick="showView('view-landing')" class="w-full mt-6 text-slate-500 hover:text-white transition">← Back to Home</button>
         </div>
     </section>
 
@@ -55,7 +55,7 @@
         <div class="w-full max-w-2xl">
             <div class="flex justify-between items-center mb-10">
                 <h2 class="text-2xl font-bold text-blue-400">Hookly Dashboard</h2>
-                <button id="logoutBtn" class="text-slate-500 hover:text-red-400">Logout</button>
+                <button onclick="handleLogout()" class="text-slate-400 hover:text-red-400">Logout</button>
             </div>
             <div class="glass p-8 rounded-3xl shadow-2xl">
                 <textarea id="topic" placeholder="Video topic..." class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl h-32 mb-6 text-white outline-none focus:border-blue-500 transition"></textarea>
@@ -69,7 +69,7 @@
                         <option>Aggressive</option>
                     </select>
                 </div>
-                <button id="genBtn" class="w-full bg-blue-600 p-5 rounded-2xl font-bold text-xl hover:bg-blue-500">Generate Viral Hooks</button>
+                <button onclick="generate()" id="genBtn" class="w-full bg-blue-600 p-5 rounded-2xl font-bold text-xl hover:bg-blue-500">Generate Viral Hooks</button>
             </div>
             <div id="results" class="mt-10 space-y-4"></div>
         </div>
@@ -77,83 +77,83 @@
 
     <script>
         // --- CONFIG ---
-        // !!! REPLACE THESE WITH YOUR ACTUAL VALUES !!!
         const SB_URL = 'https://fkngnzovfkaukphowsat.supabase.co';
         const SB_KEY = 'REPLACE_WITH_YOUR_SUPABASE_ANON_KEY';
 
         let supabase;
 
-        // Initialize Supabase
         try {
             supabase = window.supabase.createClient(SB_URL, SB_KEY);
         } catch (e) {
             console.error("Supabase load error:", e);
         }
 
-        async function handleLogin() {
+        window.handleLogin = async function() {
             const email = document.getElementById('login-email').value;
+            const btn = document.getElementById('loginBtn');
             if(!email) return alert("Enter email");
-            const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
-            alert(error ? error.message : "Check your email!");
-        }
+            
+            btn.disabled = true; btn.innerText = "Sending...";
+            
+            const { error } = await supabase.auth.signInWithOtp({ 
+                email, 
+                options: { emailRedirectTo: window.location.origin } 
+            });
+            
+            if (error) {
+                alert(error.message);
+                btn.disabled = false; btn.innerText = "Send Magic Link";
+            } else {
+                alert("Check your email for the magic link!");
+                btn.innerText = "Check Email!";
+            }
+        };
 
-        async function handleLogout() {
+        window.handleLogout = async function() {
             await supabase.auth.signOut();
             location.reload();
-        }
+        };
 
-        async function generate() {
+        window.generate = async function() {
             const topic = document.getElementById('topic').value;
             const btn = document.getElementById('genBtn');
             const { data: { user } } = await supabase.auth.getUser();
+            
             if(!user) return showView('view-login');
+            if(!topic) return alert("Please enter a topic");
 
             btn.disabled = true; btn.innerText = "Working...";
             try {
                 const res = await fetch('/api/generate.mjs', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic, userId: user.id, platform: document.getElementById('platform').value, tone: document.getElementById('tone').value })
+                    body: JSON.stringify({ 
+                        topic, 
+                        userId: user.id, 
+                        platform: document.getElementById('platform').value, 
+                        tone: document.getElementById('tone').value 
+                    })
                 });
                 const data = await res.json();
                 if(!res.ok) throw new Error(data.error);
-                document.getElementById('results').innerHTML = data.hooks.map(h => `<div class="glass p-6 rounded-2xl border-l-4 border-l-blue-500"><p>${h}</p></div>`).join('');
+                
+                document.getElementById('results').innerHTML = data.hooks.map(h => 
+                    `<div class="glass p-6 rounded-2xl border-l-4 border-l-blue-500 animate-in fade-in slide-in-from-bottom-2 duration-500"><p>${h}</p></div>`
+                ).join('');
             } catch (err) { alert(err.message); }
             finally { btn.disabled = false; btn.innerText = "Generate Viral Hooks"; }
-        }
+        };
 
         async function init() {
             try {
+                // FIXED THE SYNTAX ERROR HERE (added missing await)
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) showView('view-app');
-            } catch (err) {
-                console.error("init error:", err);
+            } catch (e) {
+                console.log("No user session found");
             }
         }
-
-        function initHandlers() {
-            const startBtn = document.getElementById('startBtn');
-            const loginBtn = document.getElementById('loginBtn');
-            const backBtn = document.getElementById('backBtn');
-            const logoutBtn = document.getElementById('logoutBtn');
-            const genBtn = document.getElementById('genBtn');
-
-            if (startBtn) startBtn.addEventListener('click', () => showView('view-login'));
-            if (loginBtn) loginBtn.addEventListener('click', handleLogin);
-            if (backBtn) backBtn.addEventListener('click', () => showView('view-landing'));
-            if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
-            if (genBtn) genBtn.addEventListener('click', generate);
-
-            // run init after handlers are wired
-            init();
-        }
-
-        // If DOM is still loading, wait; otherwise wire handlers immediately.
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initHandlers);
-        } else {
-            initHandlers();
-        }
+        init();
     </script>
 </body>
 </html>
