@@ -1,7 +1,7 @@
 {
   "name": "hook-generator",
   "version": "0.1.0",
-  "description": "AI that can generate hooks for videos (server-side generation on Vercel)",
+  "description": "Hook Generator using Supabase server-side queries",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,6 +9,6 @@
     "start": "vercel dev"
   },
   "dependencies": {
-    "@sanity/client": "^4.1.0"
+    "@supabase/supabase-js": "^2.31.0"
   }
 }
